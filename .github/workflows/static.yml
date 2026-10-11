@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Inventory Management: From Defects to Control · Iman Maity</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --kb:#00338D;--dark:#0C233C;--cobalt:#1E49E2;--pacific:#00B8F5;--lblue:#ACEAFF;--purple:#7213EA;--green:#098E7E;--pink:#FD349C;
+  --bg:#F2F5FA;--surface:#FFFFFF;--surface2:#E9EFFA;--text:#0C233C;--muted:#566377;--line:#E1E6EE;
+  --accent:#00338D;--accent-text:#00338D;--on-accent:#FFFFFF;
+  --c1:#00338D;--c2:#7213EA;--c3:#098E7E;--c4:#00B8F5;--c5:#989898;--c6:#1E49E2;
+  --tint-g:#E3F6F3;--tint-p:#F0E8FD;--tint-b:#E8EEFD;--tint-n:#EEF1F5;
+  --e1:0 1px 2px rgba(12,35,60,.12),0 1px 3px rgba(12,35,60,.10);
+  --e2:0 2px 6px rgba(12,35,60,.14),0 4px 12px rgba(12,35,60,.08);
+  --e3:0 6px 16px rgba(12,35,60,.18),0 12px 32px rgba(12,35,60,.10);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#071220;--surface:#0E2036;--surface2:#15304F;--text:#E8EEF7;--muted:#9DAEC4;--line:#223A58;
+    --accent:#1E49E2;--accent-text:#76D2FF;--on-accent:#fff;
+    --c1:#5B8CFF;--c2:#A66BFF;--c3:#2ED3BE;--c4:#00B8F5;--c5:#7C8CA3;--c6:#76D2FF;
+    --tint-g:#0F3A3A;--tint-p:#2A1A52;--tint-b:#14295C;--tint-n:#16283F;
+    --e1:0 1px 2px rgba(0,0,0,.5);--e2:0 2px 8px rgba(0,0,0,.5);--e3:0 8px 24px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#071220;--surface:#0E2036;--surface2:#15304F;--text:#E8EEF7;--muted:#9DAEC4;--line:#223A58;
+  --accent:#1E49E2;--accent-text:#76D2FF;--on-accent:#fff;
+  --c1:#5B8CFF;--c2:#A66BFF;--c3:#2ED3BE;--c4:#00B8F5;--c5:#7C8CA3;--c6:#76D2FF;
+  --tint-g:#0F3A3A;--tint-p:#2A1A52;--tint-b:#14295C;--tint-n:#16283F;
+  --e1:0 1px 2px rgba(0,0,0,.5);--e2:0 2px 8px rgba(0,0,0,.5);--e3:0 8px 24px rgba(0,0,0,.6);
+}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 120px);scroll-behavior:smooth}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Roboto,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;color:inherit}
+/* app bar */
+.appbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--kb);color:#fff;box-shadow:var(--e2)}
+:root[data-theme="dark"] .appbar{background:#0A1B31}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .appbar{background:#0A1B31}}
+.bar1{display:flex;align-items:center;gap:12px;padding:10px 20px}
+.logo{width:34px;height:34px;border-radius:8px;background:#fff;color:var(--kb);display:grid;place-items:center;font-weight:700;font-size:13px;letter-spacing:.5px;flex:none}
+.bar1 h1{margin:0;font-size:17px;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar1 small{display:block;font-size:11px;opacity:.75;font-weight:400;letter-spacing:.4px;text-transform:uppercase}
+.iconbtn{width:40px;height:40px;border-radius:50%;border:0;background:transparent;color:#fff;cursor:pointer;display:grid;place-items:center;position:relative;overflow:hidden}
+.iconbtn:hover{background:rgba(255,255,255,.14)}
+.phases{display:flex;gap:6px;padding:0 16px 10px;overflow-x:auto;scrollbar-width:none}
+.phases::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:500;cursor:pointer;position:relative;overflow:hidden;transition:background .2s}
+.chip:hover{background:rgba(255,255,255,.12)}
+.chip.on{background:#fff;color:var(--kb);border-color:#fff}
+.progress{height:3px;background:rgba(255,255,255,.2)}
+.progress i{display:block;height:100%;width:0;background:var(--pacific);transition:width .35s}
+/* layout */
+main{max-width:1240px;margin:0 auto;padding:22px 20px 110px}
+.pagehead h2{margin:0 0 4px;font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent-text)}
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);margin:8px 0 18px;scrollbar-width:thin}
+.tab{flex:none;background:none;border:0;padding:12px 16px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;position:relative;overflow:hidden;white-space:nowrap}
+.tab:hover{background:var(--surface2)}
+.tab.on{color:var(--accent-text)}
+.tab.on::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--accent-text)}
+.headline{font-size:clamp(20px,2.6vw,28px);line-height:1.25;font-weight:700;margin:0 0 6px;color:var(--text);max-width:980px}
+.lede{color:var(--muted);margin:0 0 18px;max-width:900px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))}
+.split{display:grid;gap:16px;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
+@media(max-width:900px){.split{grid-template-columns:1fr}}
+.card{background:var(--surface);border-radius:14px;box-shadow:var(--e1);padding:18px 20px;transition:box-shadow .2s,transform .2s;min-width:0}
+.card.hover:hover{box-shadow:var(--e3);transform:translateY(-2px)}
+.card h3{margin:0 0 8px;font-size:16px;font-weight:700}
+.card h4{margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+.card ul{margin:6px 0 0;padding-left:18px}.card li{margin:4px 0}
+.card p{margin:6px 0}
+.tint-g{background:var(--tint-g)}.tint-p{background:var(--tint-p)}.tint-b{background:var(--tint-b)}.tint-n{background:var(--tint-n)}
+.callout{border-radius:12px;padding:14px 18px;margin-top:16px;background:var(--tint-b);border:1px solid var(--line)}
+.callout.warn{background:var(--tint-p)}
+.src{font-size:12px;color:var(--muted);margin-top:14px}
+.big{font-size:clamp(28px,4vw,40px);font-weight:700;line-height:1.1;letter-spacing:-.5px;color:var(--accent-text)}
+.big.p{color:var(--c2)}.big.g{color:var(--c3)}
+.kpi{position:relative;overflow:hidden}
+.kpi .lbl{font-size:13px;font-weight:500;color:var(--muted);margin-bottom:4px}
+.kpi .sub{font-size:12px;color:var(--muted);margin-top:6px}
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap}
+.pill.g{background:var(--tint-g);color:var(--c3)}.pill.p{background:var(--tint-p);color:var(--c2)}.pill.b{background:var(--tint-b);color:var(--accent-text)}.pill.n{background:var(--tint-n);color:var(--muted)}
+/* controls */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface);margin:0 0 12px}
+.seg button{border:0;background:none;padding:7px 16px;font-size:13px;font-weight:500;cursor:pointer;position:relative;overflow:hidden;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--accent);color:var(--on-accent)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+input[type=range]{accent-color:var(--accent-text);width:min(100%,320px)}
+.field{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
+.field input{font:inherit;font-size:16px;font-weight:500;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--text);width:130px}
+.field input:focus{outline:2px solid var(--accent-text);outline-offset:0}
+/* tables */
+.tw{overflow-x:auto;border-radius:10px;border:1px solid var(--line)}
+table.t{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--surface)}
+.t th{background:var(--kb);color:#fff;text-align:left;font-weight:500;padding:10px 12px;position:sticky;top:0;white-space:nowrap}
+:root[data-theme="dark"] .t th{background:#16396B}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .t th{background:#16396B}}
+.t td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+.t tr:nth-child(even) td{background:color-mix(in srgb,var(--surface2) 45%,transparent)}
+.t tbody tr:hover td{background:var(--surface2)}
+.t .n{text-align:right;font-variant-numeric:tabular-nums}
+.sortable th{cursor:pointer;user-select:none}.sortable th:hover{filter:brightness(1.15)}
+.sortable th.asc::after{content:" ▲";font-size:10px}.sortable th.desc::after{content:" ▼";font-size:10px}
+.t tr.hl td{background:var(--tint-b);font-weight:500}
+/* process flow */
+.steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.step{border-radius:12px;padding:10px 12px;color:#fff;box-shadow:var(--e1);transition:opacity .25s,transform .2s,box-shadow .2s;cursor:default}
+.step:hover{transform:translateY(-2px);box-shadow:var(--e3)}
+.step b{display:block;font-size:20px;line-height:1.1}.step span{font-size:12.5px;opacity:.95}
+.step.va{background:var(--green)}.step.ve{background:#7C8CA3}.step.nva{background:var(--purple)}
+.step.dim{opacity:.18}.step.hot{outline:3px solid var(--pacific);outline-offset:1px}
+/* accordion */
+details.acc{background:var(--surface);border-radius:12px;box-shadow:var(--e1);margin-bottom:10px;overflow:hidden}
+details.acc summary{cursor:pointer;list-style:none;padding:14px 18px;display:flex;align-items:center;gap:12px;font-weight:500}
+details.acc summary::-webkit-details-marker{display:none}
+details.acc summary::after{content:"▾";margin-left:auto;transition:transform .2s;color:var(--muted)}
+details.acc[open] summary::after{transform:rotate(180deg)}
+details.acc .in{padding:0 18px 14px}
+.bar{height:8px;border-radius:4px;background:var(--surface2);overflow:hidden;min-width:80px;flex:1}.bar i{display:block;height:100%;background:var(--c1);border-radius:4px}
+.mrow{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid var(--line);font-size:14px}
+.mrow:first-child{border-top:0}
+/* matrix */
+.mx{display:grid;grid-template-columns:auto 1fr 1fr;gap:10px}
+.mx .ax{writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);padding:4px}
+.mx .axh{text-align:center;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+.cell{border-radius:12px;padding:14px;min-height:150px}
+.cell b{display:block;margin-bottom:2px}.cell em{font-size:12px;color:var(--muted);font-style:normal;display:block;margin-bottom:8px}
+.tag{display:inline-block;margin:3px 4px 3px 0;padding:4px 10px;border-radius:999px;background:var(--surface);box-shadow:var(--e1);font-size:12.5px;transition:transform .15s}
+.tag:hover{transform:scale(1.06)}
+/* stepper */
+.stepper{display:flex;flex-direction:column;gap:0}
+.st{display:flex;gap:14px;padding:10px 0;position:relative}
+.st .dot{flex:none;width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-weight:700;font-size:13px;z-index:1}
+.st:not(:last-child)::before{content:"";position:absolute;left:14px;top:40px;bottom:-10px;width:2px;background:var(--line)}
+.st small{color:var(--muted);display:block}
+/* email */
+.mail{background:var(--surface);border-radius:14px;box-shadow:var(--e2);padding:20px 24px;font-size:14.5px}
+.mail .hd{border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px;color:var(--muted)}
+.mail .hd b{color:var(--text)}
+.stamp{display:inline-block;padding:3px 12px;border:2px solid var(--c2);color:var(--c2);border-radius:6px;font-weight:700;letter-spacing:2px;font-size:12px;transform:rotate(-3deg)}
+/* fab + ripple */
+.fab{position:fixed;right:calc(20px + env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));z-index:25;display:flex;gap:10px}
+.fab button{border:0;border-radius:16px;height:52px;padding:0 20px;background:var(--accent);color:var(--on-accent);font-weight:500;font-size:14px;cursor:pointer;box-shadow:var(--e3);position:relative;overflow:hidden;display:flex;align-items:center;gap:8px}
+.fab button.sec{background:var(--surface);color:var(--accent-text)}
+.fab button:disabled{opacity:.4;cursor:default}
+.rip{position:absolute;border-radius:50%;background:currentColor;opacity:.25;transform:scale(0);animation:rip .55s ease-out forwards;pointer-events:none}
+@keyframes rip{to{transform:scale(3);opacity:0}}
+.panel{animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.cv{position:relative;height:340px}.cv.tall{height:440px}.cv.sm{height:260px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.hero{background:linear-gradient(135deg,#00338D 0%,#1E49E2 100%);color:#fff;border-radius:18px;padding:26px 28px;box-shadow:var(--e3);margin-bottom:18px}
+.hero small{letter-spacing:1.4px;font-weight:700;text-transform:uppercase;color:var(--lblue);font-size:12px}
+.hero h1{margin:8px 0 8px;font-size:clamp(26px,4vw,40px);line-height:1.15}
+.hero p{margin:0;max-width:760px;color:#DCE6FF}
+
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--accent-text);border-radius:999px;padding:7px 16px;font-size:13px;font-weight:500;cursor:pointer;position:relative;overflow:hidden;margin:0 0 12px;box-shadow:var(--e1)}
+.btn.pri{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn:hover{box-shadow:var(--e2)}
+.swwrap{overflow-x:auto}.swwrap svg{width:100%;min-width:640px;height:auto;display:block}
+#swsvg text{fill:var(--text);font-family:Roboto,"Segoe UI",Arial,sans-serif}
+#swsvg .frame{fill:var(--surface);stroke:none}#swsvg .frame2{fill:none;stroke:var(--c1);stroke-width:1.5}
+#swsvg .lane.l0{fill:var(--surface)}#swsvg .lane.l1{fill:var(--tint-n)}
+#swsvg .lane{stroke:var(--line);stroke-width:1}
+#swsvg .lanehd{fill:var(--tint-b);stroke:var(--line)}
+#swsvg .lt{font-size:12px;font-weight:700;fill:var(--accent-text)}
+#swsvg .nd{cursor:pointer;outline:none}
+#swsvg .nd .sh{fill:var(--surface);stroke:var(--c1);stroke-width:1.5;transition:stroke-width .15s}
+#swsvg .nd.end .sh{fill:var(--tint-g);stroke:var(--c3)}
+#swsvg .nd:hover .sh,#swsvg .nd:focus-visible .sh{stroke-width:3}
+#swsvg .nd.sel .sh{stroke:var(--accent-text);stroke-width:3.5}
+#swsvg .nd.sel{filter:drop-shadow(0 3px 6px rgba(0,51,141,.35))}
+#swsvg .in{stroke:var(--c1);stroke-width:1.2;fill:none}
+#swsvg .ttl{font-size:13px;font-weight:700}#swsvg .sub{font-size:10.5px;fill:var(--muted)}
+#swsvg .bd{font-size:11px;font-weight:700;fill:var(--accent-text)}
+#swsvg .edge{fill:none;stroke:var(--muted);stroke-width:1.8}
+#swsvg .edge.act{stroke:var(--accent-text);stroke-width:2.6;stroke-dasharray:7 5;animation:dash .7s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-24}}
+#swsvg .arh{fill:var(--muted)}#swsvg .arA{fill:var(--accent-text)}
+#swsvg .ghost rect{fill:var(--tint-p);stroke:var(--c2);stroke-dasharray:5 4}
+#swsvg .ghost text{font-size:11.5px;font-weight:700;fill:var(--c2)}
+#swsvg .tok{transition:transform .6s cubic-bezier(.3,.7,.3,1)}
+#swsvg .tok circle{fill:var(--c2);stroke:#fff;stroke-width:2}
+#swsvg .tok text{fill:#fff;font-size:10px;font-weight:700}
+
+/* ---------- intro / about page ---------- */
+.intro{position:relative;overflow:hidden;background:linear-gradient(135deg,#00338D 0%,#1E49E2 60%,#7213EA 120%);color:#fff;border-radius:20px;padding:30px 28px;box-shadow:var(--e3);margin-bottom:18px;display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center}
+.intro::before,.intro::after{content:"";position:absolute;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(0,184,245,.35),transparent 70%);animation:floaty 9s ease-in-out infinite}
+.intro::before{width:320px;height:320px;right:-80px;top:-120px}
+.intro::after{width:240px;height:240px;left:30%;bottom:-140px;animation-delay:-4s;background:radial-gradient(circle,rgba(253,52,156,.28),transparent 70%)}
+@keyframes floaty{50%{transform:translate(-18px,14px) scale(1.08)}}
+.avatar{position:relative;width:132px;height:132px;border-radius:50%;display:grid;place-items:center;font-size:46px;font-weight:700;letter-spacing:1px;color:#fff;background:linear-gradient(145deg,#00B8F5,#7213EA);border:4px solid rgba(255,255,255,.85);box-shadow:0 10px 30px rgba(0,0,0,.35);cursor:pointer;user-select:none;transition:transform .25s;z-index:1}
+.avatar:hover{transform:rotate(-6deg) scale(1.06)}
+.avatar::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:2px dashed rgba(255,255,255,.55);animation:spin 18s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.intro .who{position:relative;z-index:1;min-width:0}
+.intro small{letter-spacing:1.4px;font-weight:700;text-transform:uppercase;color:var(--lblue);font-size:12px}
+.intro h1{margin:6px 0 4px;font-size:clamp(28px,5vw,46px);line-height:1.1}
+.intro .hi{color:var(--lblue);font-weight:500}
+.intro .typed{font-size:clamp(15px,2vw,19px);min-height:1.6em;color:#E6EEFF}
+.intro .typed::after{content:"";display:inline-block;width:2px;height:1.05em;background:var(--pacific);margin-left:3px;vertical-align:-3px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.intro p.note{margin:12px 0 0;max-width:640px;color:#DCE6FF}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.btn{font:inherit;font-weight:500;font-size:14px;border:0;border-radius:10px;padding:10px 18px;cursor:pointer;position:relative;overflow:hidden;background:#fff;color:var(--kb);box-shadow:var(--e1);transition:transform .15s,box-shadow .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:var(--e2)}
+.btn.ghost{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.5)}
+.contact{display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--text);position:relative}
+.contact .ico{flex:none;width:46px;height:46px;border-radius:12px;display:grid;place-items:center;color:#fff;transition:transform .25s}
+.contact:hover .ico{transform:rotate(-8deg) scale(1.1)}
+.contact .ico.li{background:#0A66C2}.contact .ico.gh{background:#24292F}.contact .ico.em{background:var(--pink)}
+.contact b{display:block;font-size:15px}
+.contact span.v{display:block;font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.contact .cp{margin-left:auto;flex:none;border:1px solid var(--line);background:var(--surface2);color:var(--accent-text);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:500;cursor:pointer}
+.contact .cp:hover{background:var(--accent);color:var(--on-accent)}
+.phgo{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.phgo button{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 14px;cursor:pointer;font-size:14px;font-weight:500;box-shadow:var(--e1);transition:transform .15s,box-shadow .2s,background .2s;position:relative;overflow:hidden}
+.phgo button:hover{transform:translateY(-3px);box-shadow:var(--e3);background:var(--tint-b)}
+.phgo button i{font-style:normal;display:inline-grid;place-items:center;width:22px;height:22px;margin-right:8px;border-radius:50%;background:var(--accent);color:var(--on-accent);font-size:12px;font-weight:700}
+.toast{position:fixed;left:50%;bottom:90px;transform:translate(-50%,20px);background:var(--dark);color:#fff;padding:10px 18px;border-radius:10px;box-shadow:var(--e3);font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:60}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:640px){.intro{grid-template-columns:1fr;text-align:center;justify-items:center;padding:26px 18px}.intro p.note{margin-left:auto;margin-right:auto}.cta{justify-content:center}}
+@media(prefers-reduced-motion:reduce){.intro::before,.intro::after,.avatar::after{animation:none}}
+
+@media print{.appbar,.fab{display:none}}
+</style>
+</head>
+<body>
+<header class="appbar">
+  <div class="bar1">
+    <div class="logo">6σ</div>
+    <h1><small>Six Sigma case · Parahouse Warehousing · 300 SKUs</small>Inventory Management: From Defects to Control</h1>
+    <button class="iconbtn" id="themeBtn" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 1 0 9 9c0-.5 0-.9-.1-1.3A5.5 5.5 0 0 1 13.3 3.1 9 9 0 0 0 12 3z"/></svg>
+    </button>
+  </div>
+  <nav class="phases" id="phases" aria-label="DMAIC phases"></nav>
+  <div class="progress"><i id="prog"></i></div>
+</header>
+<main>
+  <div class="pagehead"><h2 id="pageLabel"></h2></div>
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <section id="panel" class="panel"></section>
+</main>
+<div class="fab"><button class="sec" id="prevBtn">← Back</button><button id="nextBtn">Next →</button></div>
+
+<script>
+const DAILY = {"pick": [2.685, 2.143, 2.222, 1.852, 1.765, 1.875, 1.613, 1.852, 1.905, 1.852, 1.667, 1.905, 1.667, 1.923, 1.613, 1.765, 1.786, 1.875, 1.667, 1.875, 1.818, 1.622, 1.667, 1.905, 1.875, 1.765, 1.818, 1.765, 2.0, 2.105, 1.875, 1.875, 2.222, 1.667, 1.905, 1.875, 2.143, 2.0, 2.143, 2.143, 2.0, 2.0, 1.875, 2.0, 2.105, 2.0, 2.0, 2.105, 2.105, 1.667, 1.667, 2.0, 2.0, 1.765, 1.765, 1.905, 1.765, 1.818, 1.765, 2.0, 1.765, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.465, 0.0, 0.0, 0.0, 0.0, 0.0, 0.435, 0.0, 0.0, 0.382, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.546, 0.0, 0.0, 0.0, 0.0, 0.0, 0.588, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.31, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.962, 0.0, 0.0, 0.0, 0.0, 0.0, 1.736, 0.0, 0.0], "dmg": [2.685, 5.0, 2.778, 0.741, 1.765, 0.312, 2.903, 1.481, 0.952, 0.741, 2.5, 0.952, 3.333, 3.462, 1.935, 0.588, 1.071, 0.312, 3.75, 1.875, 3.636, 1.622, 0.0, 2.857, 1.875, 1.765, 2.273, 1.176, 0.5, 4.211, 1.25, 1.25, 3.333, 1.333, 1.429, 0.625, 0.714, 2.667, 2.857, 4.286, 3.6, 2.0, 3.125, 0.667, 3.158, 2.0, 6.667, 4.737, 4.737, 3.333, 1.25, 9.0, 5.333, 2.941, 2.353, 1.905, 0.294, 4.091, 4.118, 6.667, 5.294, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.41, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.325, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.321, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.568, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.274, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]};
+const RAW={"n":[149,140,180,270,170,320,310,270,210,270,240,210,240,260,310,340,280,320,240,160,220,370,360,210,160,170,220,340,200,190,160,160,180,300,210,160,140,150,140,140,250,150,160,150,190,150,150,190,190,300,240,100,150,170,170,210,340,220,170,150,170,243,165,290,142,232,368,301,172,322,244,215,350,368,225,221,149,230,149,186,262,300,227,291,160,327,265,151,366,257,288,279,166,228,170,280,312,180,269,338,189,258,148,229,198,196,242,176,308,298,175,276,334,208,365,138,363,336,319,288,362,271],"pk":[4,3,4,5,3,6,5,5,4,5,4,4,4,5,5,6,5,6,4,3,4,6,6,4,3,3,4,6,4,4,3,3,4,5,4,3,3,3,3,3,5,3,3,3,4,3,3,4,4,5,4,2,3,3,3,4,6,4,3,3,3,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,2,0,0,0,0,0,1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,5,0,0],"dm":[4,7,5,2,3,1,9,4,2,2,6,2,8,9,6,2,3,1,9,3,8,6,0,6,3,3,5,4,1,8,2,2,6,4,3,1,1,4,4,6,9,3,5,1,6,3,10,9,9,10,3,9,8,5,4,4,1,9,7,10,9,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0],"act":[105,799,790,335,608,737,954,976,436,613,781,839,685,344,144,811,709,457,539,105,988,107,911,596,202,441,383,199,880,493,158,137,124,196,115,424,577,713,420,267,875,330,154,404,629,217,155,208,199,703,185,275,383,998,281,640,181,361,823,725,916,636,876,445,675,880,363,126,592,734,325,555,483,374,805,769,137,737,788,132,958,165,370,774,994,809,396,254,814,170,963,865,654,537,664,925,884,150,917,674,970,620,362,460,146,773,449,431,300,970,559,919,751,904,965,384,443,744,202,930,939,705],"sap":[98,790,784,333,607,737,953,971,426,604,780,835,685,342,142,804,700,452,535,102,981,101,906,592,193,434,374,191,880,486,152,128,119,194,112,418,573,712,420,264,871,326,140,399,625,216,139,201,196,695,184,268,373,995,276,638,177,354,818,716,908,636,876,445,675,876,363,126,592,734,325,555,483,374,805,769,137,737,788,132,958,165,370,774,994,809,396,254,814,166,963,865,654,537,664,925,884,150,917,674,966,620,362,460,146,773,445,431,300,970,559,919,751,904,965,384,443,744,202,925,939,705]};
+const XLSX_B64='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';
+/* ---------- helpers ---------- */
+const $=(s,r=document)=>r.querySelector(s);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let charts=[];
+function killCharts(){charts.forEach(c=>c.destroy());charts=[]}
+function mk(id,cfg){
+  const el=document.getElementById(id);if(!el||!window.Chart)return null;
+  Chart.defaults.font.family='Roboto,"Segoe UI",Arial,sans-serif';
+  Chart.defaults.font.size=12;
+  Chart.defaults.color=css('--muted');
+  Chart.defaults.borderColor=css('--line');
+  cfg.options=Object.assign({responsive:true,maintainAspectRatio:false},cfg.options||{});
+  const c=new Chart(el,cfg);charts.push(c);return c;
+}
+const col=()=>({b:css('--c1'),p:css('--c2'),g:css('--c3'),pa:css('--c4'),gr:css('--c5'),co:css('--c6'),line:css('--line'),muted:css('--muted')});
+const pill=(t,k)=>`<span class="pill ${k||'n'}">${t}</span>`;
+function tbl(head,rows,o={}){
+  const num=o.num||[];
+  return `<div class="tw"><table class="t${o.sort?' sortable':''}"><thead><tr>${head.map((h,i)=>`<th class="${num.includes(i)?'n':''}">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr${o.hl&&o.hl(r)?' class="hl"':''}>${r.map((c,i)=>`<td class="${num.includes(i)?'n':''}">${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+const ul=a=>`<ul>${a.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+const card=(t,b,c='')=>`<div class="card ${c}">${t?`<h3>${t}</h3>`:''}${b}</div>`;
+const src=t=>`<div class="src">Source: ${t}</div>`;
+const head=(h,l)=>`<h3 class="headline">${h}</h3>${l?`<p class="lede">${l}</p>`:''}`;
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+function seg(id,opts,on){return `<div class="seg" id="${id}">${opts.map(([k,l])=>`<button data-k="${k}" class="${k===on?'on':''}">${l}</button>`).join('')}</div>`}
+function bindSeg(id,fn){const el=document.getElementById(id);if(!el)return;el.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));fn(b.dataset.k)})}
+function countUp(el,to,dec,suf,pre){const t0=performance.now(),d=600;(function f(t){const k=Math.min(1,(t-t0)/d),e=1-Math.pow(1-k,3);el.textContent=(pre||'')+(to*e).toFixed(dec)+(suf||'');if(k<1)requestAnimationFrame(f)})(t0)}
+
+/* ---------- data ---------- */
+const PARETO={
+ pick:{n:243,title:'Incorrect items picked',rows:[['Manual errors during picking',102],['Poorly labeled shelves or bins',85],['Outdated or inaccurate pick lists',17],['Similar-looking items stored close together',12],['Inadequate training of warehouse staff',9],['Lack of barcode scanning or verification',9],['Inconsistent storage layout or frequent reorganization',5],['Language barriers or unclear instructions',3],['High picker fatigue due to long shifts',1]],
+  notes:['Manual errors (42%) is a catch-all code: split it into sub-causes before acting','Poor bin and shelf labels (35%) is concrete and fixable with relabelling','Training (9) and no scan check (9) are minor here, unlike in damage and mismatch'],
+  head:'Two causes, manual picking errors and poor bin labelling, account for 77% of picking errors'},
+ dmg:{n:299,title:'Damaged goods',rows:[['Inadequate training on handling sensitive goods',119],['Stacking errors or poor palletization',74],['Lack of standard operating procedures for fragile items',42],['Improper handling during picking or packing',21],['Overloaded or unstable shelving',11],['Use of inadequate packaging materials',9],['Poorly maintained equipment',6],['Environmental factors',6],['Items dropped during transit within warehouse',5],['Rushed operations due to high order volume',4],['Neglect of quality checks before dispatch',2]],
+  notes:['Training is the single largest cause (39.8%), yet is minor for picking','Stacking and the missing fragile SOP (38.7% together) are process-standard gaps','Rushed operations: only 4 cases (1.3%), so volume pressure is not a driver'],
+  head:'Handling training, stacking errors and missing fragile-item SOPs drive 78.6% of damage'},
+ mis:{n:315,title:'Inventory mismatch (variance units)',rows:[['Receiving errors',98],['Duplicate SKUs or misclassified items',76],['Inconsistent cycle counting practices',64],['Poor visibility into slow-moving or obsolete stock',33],['Untracked internal movements of inventory',14],['No reconciliation between physical and system counts',14],['Lack of system integration between departments',8],['Software glitches or sync issues',5],['Inventory theft or shrinkage',3]],
+  notes:['Receiving errors lead (31.1%): the dock is where the record first goes wrong','SAP was below actual on all 57 mismatch days: a systematic under-record, not random noise','Flatter than picking: needs a package of 3 fixes, not one'],
+  head:'Receiving errors, duplicate SKUs and inconsistent cycle counts drive 75.6% of count mismatches'}
+};
+const FLOW=[['Receive order',2,'ve'],['Validate order',3,'ve'],['Generate pick list',2,'ve'],['Assign picker (manual)',9,'nva'],['Locate item',6,'va'],['Scan barcode',1,'ve'],['Cross-check vs list',2,'ve'],['Transport to packing',4,'nva'],['Wait for packing station',17,'nva'],['Inspect for damage',3,'ve'],['Pack item',5,'va'],['Update inventory',3,'ve'],['Reconcile discrepancies',6,'nva'],['Shipping label',2,'ve'],['Stage for dispatch',9,'nva']];
+const HOT=[3,8,12,14];
+const DATES=(()=>{const a=[],f=(y,m,d0,n)=>{for(let i=0;i<n;i++){const d=new Date(Date.UTC(y,m,d0+i));a.push(d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit',timeZone:'UTC'}))}};f(2021,3,1,61);f(2025,9,1,61);return a})();
+
+/* ---------- pages ---------- */
+const PAGES=[];
+const P=(id,label,tabs)=>PAGES.push({id,label,tabs});
+
+P('intro','About',[
+{id:'bio',label:'Intro',html:()=>`
+ <div class="intro">
+  <div class="avatar" id="avatar" title="Click me!" role="button" aria-label="Avatar">IM</div>
+  <div class="who">
+   <small>Presented by</small>
+   <h1><span class="hi" id="greet">Hello, I’m</span> Iman Maity</h1>
+   <div class="typed" id="typed" aria-live="polite"></div>
+   <p class="note">This interactive deck walks through a Six Sigma DMAIC case on inventory management at Parahouse Warehousing: how picking errors, damaged goods and stock-count mismatches fell, and how to keep them down.</p>
+   <div class="cta"><button class="btn" data-go="overview">Start the case →</button><button class="btn ghost" id="emailBtn">✉ Say hello</button></div>
+  </div>
+ </div>
+ <div class="grid g3">
+  ${[['li','LinkedIn','linkedin.com/in/imanmaity','https://www.linkedin.com/in/imanmaity/','<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.75h4V21H3V9.75zM9.5 9.75h3.8v1.6h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21h-4v-5.1c0-1.22-.02-2.78-1.7-2.78-1.7 0-1.96 1.33-1.96 2.69V21h-4V9.75z"/></svg>'],
+  ['gh','GitHub','github.com/imanmaity','https://github.com/imanmaity','<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.18 1.83 1.18 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>'],
+  ['em','Email','iman.maity.opportunuties@gmail.com','mailto:iman.maity.opportunuties@gmail.com','<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm9 7.2L4.5 7v.1L12 12.4 19.5 7.1V7L12 12.2z"/></svg>']]
+  .map(c=>card('',`<a class="contact" href="${c[3]}" ${c[0]==='em'?'':'target="_blank" rel="noopener noreferrer"'}><div class="ico ${c[0]}">${c[4]}</div><div style="min-width:0"><b>${c[1]}</b><span class="v">${c[2]}</span></div></a>`.replace('</a>',`</a>`)+(c[0]==='em'?'':''),'hover')).join('')}
+ </div>
+ <div class="grid g2" style="margin-top:16px">
+  ${card('About this case',seg('aboutSeg',[['p','The problem'],['m','The method'],['r','The result']],'p')+'<div id="aboutTxt" style="margin-top:12px;min-height:84px"></div>','')}
+  ${card('Case at a glance','<div class="grid g2" id="glance"></div>','tint-b')}
+ </div>
+ <h3 class="headline" style="margin-top:22px;font-size:18px">Jump to a phase</h3>
+ <div class="phgo">${[['overview','Overview'],['define','Define'],['measure','Measure'],['analyze','Analyze'],['improve','Improve'],['control','Control'],['conclusion','Conclusion']].map((p,i)=>`<button data-go="${p[0]}"><i>${i+1}</i>${p[1]}</button>`).join('')}</div>
+ <div class="src">Tip: use the ← → arrow keys or the Back / Next buttons to move through the deck; the moon icon toggles dark mode.</div>`,
+ init(){
+  /* typed headline */
+  const lines=['Six Sigma · DMAIC case study','Inventory Management: From Defects to Control','Parahouse Warehousing · 300 SKUs'];
+  const tEl=$('#typed');let li=0,ci=0,del=false,alive=true;
+  const tick=()=>{if(!document.body.contains(tEl)){alive=false;return}
+   const s=lines[li];ci+=del?-1:1;tEl.textContent=s.slice(0,ci);
+   let d=del?25:55;
+   if(!del&&ci===s.length){del=true;d=1600}else if(del&&ci===0){del=false;li=(li+1)%lines.length;d=350}
+   setTimeout(tick,d)};tick();
+  /* time-aware greeting */
+  const h=new Date().getHours();
+  $('#greet').textContent=(h<12?'Good morning, I’m':h<18?'Good afternoon, I’m':'Good evening, I’m');
+  /* avatar easter egg */
+  const av=$('#avatar'),faces=['IM','6σ','📦','✔'];let fi=0;
+  av.onclick=()=>{fi=(fi+1)%faces.length;av.textContent=faces[fi];av.style.fontSize=fi===2||fi===3?'54px':''};
+  /* toast + copy */
+  const toast=m=>{let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';t.className='toast';document.body.appendChild(t)}
+   t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),1800)};
+  const copy=async txt=>{try{await navigator.clipboard.writeText(txt)}catch(e){const a=document.createElement('textarea');a.value=txt;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(_){}a.remove()}toast('Copied: '+txt)};
+  const mailCard=document.querySelector('.contact .ico.em').closest('.contact');
+  const cp=document.createElement('button');cp.className='cp';cp.textContent='Copy';cp.type='button';
+  cp.onclick=e=>{e.preventDefault();e.stopPropagation();copy('iman.maity.opportunuties@gmail.com')};
+  mailCard.appendChild(cp);
+  $('#emailBtn').onclick=()=>{location.href='mailto:iman.maity.opportunuties@gmail.com?subject='+encodeURIComponent('Inventory Management: From Defects to Control')};
+  /* phase jump buttons */
+  $('#panel').addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(!g)return;const i=PAGES.findIndex(p=>p.id===g.dataset.go);if(i>=0)show(i,0)});
+  /* about toggle */
+  const T={p:'Picking errors, damaged goods and mismatches between recorded and actual stock were driving avoidable cost and slowing orders in a 300-SKU warehouse.',
+   m:'A full DMAIC walk-through (Define, Measure, Analyze, Improve, Control) using Pareto charts, control charts, capability and sigma levels, FMEA and a sustainment plan.',
+   r:'Picking errors went from 1.86% to 0.10%, damage from 2.29% to 0.04%, and mismatch days from 57 to 5 of 61, with honest limits on what can be attributed to our actions.'};
+  const setT=k=>{const el=$('#aboutTxt');el.style.opacity=0;setTimeout(()=>{el.textContent=T[k];el.style.transition='opacity .25s';el.style.opacity=1},120)};
+  $('#aboutTxt').textContent=T.p;bindSeg('aboutSeg',setT);
+  /* glance counters */
+  const G=[['Picking errors',1.86,0.10,2,'%'],['Damage rate',2.29,0.04,2,'%'],['Mismatch days',57,5,0,' / 61'],['Inventory accuracy',98.94,99.94,2,'%']];
+  $('#glance').innerHTML=G.map((g,i)=>`<div class="card hover" style="padding:12px 14px;cursor:pointer" data-i="${i}"><div class="lbl" style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px">${g[0]}</div><div class="big" style="font-size:26px" id="gl${i}">–</div><div class="sub" style="font-size:12px;color:var(--muted)" id="gs${i}">Click to compare</div></div>`).join('');
+  const st=G.map(()=>0);
+  const paint=i=>{const g=G[i],after=st[i]===1;const el=$('#gl'+i);el.className='big '+(after?'g':'p');countUp(el,after?g[2]:g[1],g[3],g[4]);$('#gs'+i).textContent=after?'Improve period (Oct–Nov 2025)':'Baseline (Apr–May 2021) · click to compare'};
+  G.forEach((_,i)=>paint(i));
+  $('#glance').addEventListener('click',e=>{const c=e.target.closest('[data-i]');if(!c)return;const i=+c.dataset.i;st[i]=1-st[i];paint(i)});
+ }}
+]);
+
+P('overview','Overview',[
+{id:'summary',label:'Executive summary',html:()=>`
+ <div class="hero"><small>DMAIC case · Parahouse Warehousing · 300 SKUs</small><h1>Defects fell 91–98% between two periods. Proving why, and making it last, is the next job.</h1><p>A data-driven DMAIC analysis of picking errors, damaged goods and inventory-count mismatches. Every figure was recomputed from the workbook rather than copied from its summary cells.</p></div>
+ ${seg('kpiMode',[['b','Baseline (Apr–May 2021)'],['i','Improve (Oct–Nov 2025)'],['c','Change']],'b')}
+ <div class="grid g4" id="kpis"></div>
+ <div class="grid g3" style="margin-top:16px">
+  ${card('Where the errors come from',ul(['Picking: manual errors + poor bin labels = 77%','Damage: handling training, stacking, no fragile SOP = 78.6%','Mismatch: receiving errors, duplicate SKUs, cycle counting = 75.6%']),'hover')}
+  ${card('What to do first',ul(['Damage and inventory accuracy: highest case cost per incident','Relabel bins and add scan-to-confirm: picking quick win','Picking is still the largest residual error source']),'hover')}
+  ${card('What we cannot claim',ul(['Periods are Apr–May 2021 vs Oct–Nov 2025','No record of which fixes were implemented','Cost figures are scenarios at case unit losses']),'hover tint-p')}
+ </div>
+ ${src('Measure and Improve sheets (recomputed); Analyze (2) for Pareto shares. Relative reduction = (baseline − improve) / baseline.')}`,
+ init(){
+  const K=[
+   {l:'Picking error rate',b:[1.86,2,'%'],i:[0.10,2,'%'],c:'−94.4%',s:['243 of 13,039 items','16 of 15,365 items','−1.76 pp']},
+   {l:'Damage rate',b:[2.29,2,'%'],i:[0.04,2,'%'],c:'−98.3%',s:['299 of 13,039 items','6 of 15,365 items','−2.25 pp']},
+   {l:'Days with mismatch',b:[57,0,' / 61'],i:[5,0,' / 61'],c:'−91.2%',s:['Variance units: 315','Variance units: 21','−52 days']},
+   {l:'Inventory accuracy',b:[98.94,2,'%'],i:[99.94,2,'%'],c:'+1.00 pp',s:['1.06% variance','0.06% variance','Accuracy gain']}];
+  const draw=m=>{$('#kpis').innerHTML=K.map((k,ix)=>`<div class="card kpi hover"><div class="lbl">${k.l}</div><div class="big ${m==='i'?'g':m==='c'?'g':'p'}" id="k${ix}">–</div><div class="sub">${m==='b'?k.s[0]:m==='i'?k.s[1]:k.s[2]}</div></div>`).join('');
+   K.forEach((k,ix)=>{const el=$('#k'+ix);if(m==='c')el.textContent=k.c;else{const v=m==='b'?k.b:k.i;countUp(el,v[0],v[1],v[2])}})};
+  draw('b');bindSeg('kpiMode',draw);
+ }},
+{id:'toolkit',label:'Toolkit coverage',html:()=>{
+ const cols={'Pre-DMAIC':[['VOC / VOB','h'],['CTQ','f'],['Analysis of As-Is Y','f']],'Define':[['Project charter','f'],['SIPOC / COPIS','f'],['As-Is flow chart','f'],['Estimated benefits','h'],['Approval email (draft)','h']],'Measure':[['Data collection plan','f'],['GRR / AAA','e'],['Normality test','f'],['Process capability','f'],['Sigma level','f']],'Analyze':[['Fishbone','f'],['Data availability tracker','f'],['Control-impact matrix','h'],['Hypothesis testing','f'],['Test summary','f'],['Impacted X’s','f']],'Improve':[['FMEA','h'],['Implemented solutions','e']],'Control':[['Sustainment plan','h'],['Pre & post analysis','f'],['To-Be process map','h'],['To-Be capability','f'],['To-Be sigma level','f'],['Actual benefits','h'],['Approved email','e']]};
+ const ic={f:'●',h:'◐',e:'○'},cl={f:'g',h:'b',e:'p'};
+ return head('The deck follows the toolkit grid; each tool is evidenced, proposed, or flagged as a data gap')+
+ `<div class="row" style="margin-bottom:14px">${pill('● Evidenced from data','g')} ${pill('◐ Proposed / scenario','b')} ${pill('○ Data gap','p')}</div>
+ <div class="grid g3">${Object.entries(cols).map(([k,v])=>card(k,v.map(([n,s])=>`<div class="mrow"><span>${n}</span>${pill(ic[s],cl[s])}</div>`).join(''),'hover')).join('')}</div>`+src('Book1.xlsx, Sheet4 (toolkit grid).')}}
+]);
+
+P('define','Define',[
+{id:'voice',label:'Voice of customer',html:()=>head('Customers and the business ask for the same thing: the right item, undamaged, and correctly counted')+`
+ <div class="grid g3">
+  ${card('Voice of customer','<h4>Client brands and their end customers</h4>'+ul(['Receive the item that was ordered','Receive goods undamaged','Receive shipments on time (delays are named in the case)']),'hover')}
+  ${card('Voice of business','<h4>Parahouse Warehousing (3PL provider)</h4>'+ul(['Protect margins from write-downs, replacement cost and admin friction','Retain contracts and brand reputation','Control the cost of the three defect types']),'hover')}
+  ${card('Voice of process','<h4>What the data says today</h4>'+ul(['Picking errors in 1.86% of sampled items','Damage in 2.29% of sampled items','Count mismatch on 57 of 61 days']),'hover tint-g')}
+ </div>
+ <div class="callout warn"><b>Gap to close:</b> no complaint log, on-time delivery data or client feedback is in the workbook. The first two columns are inferred from the case narrative and should be validated with the sponsor before targets are set.</div>
+ ${src('Define sheet (case narrative and business case). Needs are inferred from case text; no survey data in workbook.')}`},
+{id:'ctq',label:'CTQ tree',html:()=>head('Three CTQs turn customer needs into measurable defect definitions')+
+ tbl(['Customer need','Driver','CTQ metric','Operational definition','Baseline'],[
+ ['Right item delivered','Correct pick','<b>Picking error rate</b>','Incorrectly picked items ÷ sampled items',pill('1.86%','p')],
+ ['Goods arrive undamaged','Safe handling and packing','<b>Damage rate</b>','Damaged items ÷ sampled items',pill('2.29%','p')],
+ ['Stock records can be trusted','Accurate system count','<b>Inventory accuracy and mismatch days</b>','|Actual − SAP| ÷ actual units; days with Actual ≠ SAP ÷ days',pill('1.06% variance; 57/61 days','p')]])+
+ `<div class="callout"><b>Specification:</b> the case sets no numeric limit, so any occurrence counts as a defect. Numeric targets must be agreed with the sponsor.</div>`+src('Measure sheet column definitions. Targets not given in the case.')},
+{id:'asis',label:'As-Is Y',html:()=>head('As-Is Y: about 14 defect units a day, below the 16–30 the case assumed')+`
+ <div class="split">${card('Defects per day: case assumption vs observed (Apr–May 2021)','<div class="cv"><canvas id="cAsIs"></canvas></div>')}
+ ${card('Reading the gap',ul(['Total observed: <b>14.0</b> defect units a day vs 16–30 assumed','Picking (3.98) is just below the 4–8 range; damage (4.90) is inside it','Inventory (5.16 units a day) is below the assumed 8–14','Units differ: case counts per order, workbook per item or unit','Mismatch occurs on 93% of days, so track rates, not only counts']))}</div>`+
+ src('Define sheet (case assumptions); Measure sheet totals ÷ 61 days. Inventory variance counted in units (Σ|Actual − SAP|).'),
+ init(){const c=col();mk('cAsIs',{type:'bar',data:{labels:['Picking errors','Damaged items','Inventory variance units'],datasets:[{label:'Case assumption (low)',data:[4,4,8],backgroundColor:c.gr},{label:'Case assumption (high)',data:[8,8,14],backgroundColor:c.pa},{label:'Observed baseline',data:[3.98,4.9,5.16],backgroundColor:c.b}]},options:{plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,title:{display:true,text:'per day'}}}}})}},
+{id:'charter',label:'Charter & SIPOC',html:()=>head('Project charter: cut picking, damage and count defects across 300 SKUs')+`
+ <div class="grid g2">
+  ${card('Problem statement','<p>Parahouse Warehousing sees rising picking, damage and inventory-count errors across 300 SKUs, reducing customer satisfaction, delaying shipments and causing unrecovered cost.</p>','hover')}
+  ${card('Business case','<p>As a 3PL provider, contract renewals, reputation and margin depend on order accuracy. Compounding errors cause write-downs, replacement cost and admin friction.</p>','hover')}
+  ${card('Goal '+pill('proposed','b'),'<p>Reduce picking error rate, damage rate and mismatch days versus the baseline. Numeric targets to be set with the sponsor.</p>','hover')}
+  ${card('Scope','<p><b>In:</b> picking process, damaged goods, inventory counts (300 SKUs).<br><b>Out:</b> other fulfilment defects, transport outside the warehouse.</p>','hover')}
+  ${card('Timeline (case)','<p>One month detailed data collection, then a summary with corrective actions over six months.</p>','hover')}
+  ${card('Team and sponsor','<p>Sponsor willing to invest if work stays focused on the three defect types. Named roles are not in the workbook.</p>','hover')}
+ </div>
+ <h3 class="headline" style="margin-top:26px;font-size:20px">SIPOC bounds the process from order receipt to dispatch</h3>
+ ${tbl(['Suppliers','Inputs','Process','Outputs','Customers'],[[ul(['Client brands (orders)','Inbound suppliers and carriers','SAP / inventory system','Packaging suppliers']),ul(['Customer order','SKU master and locations','Pick list','Inventory records','Packing materials']),'<ol style="margin:0;padding-left:18px"><li>Receive and validate order (steps 1–3)</li><li>Assign picker and pick (4–7)</li><li>Transport, wait, inspect, pack (8–11)</li><li>Update and reconcile inventory (12–13)</li><li>Label and stage for dispatch (14–15)</li></ol>',ul(['Correct, undamaged shipment','Updated stock record','Shipping label','Dispatch-ready item']),ul(['Client brands','End customers','Parahouse management (cost, margin)'])]])}
+ ${src('Define sheet; Analyze (1) process steps (grouped). Items marked “proposed” are not in the workbook; suppliers and customers inferred.')}`},
+{id:'flow',label:'As-Is flow',html:()=>head('As-Is flow: 61% of the 74-minute order cycle is non-value-adding, led by a 17-minute packing wait')+`
+ ${seg('flowF',[['all','All steps'],['va','Value-adding'],['ve','Value-enabling'],['nva','Non-value-adding'],['hot','Hotspots']],'all')}
+ <div class="steps" id="steps"></div>
+ <div class="grid g2" style="margin-top:16px">
+  ${card('Where the 74 minutes go','<div class="cv sm"><canvas id="cFlow"></canvas></div>')}
+  ${card('Hotspot steps',ul(['Step 4 manual assignment: <b>9 min</b>','Step 9 packing-station wait: <b>17 min</b>','Step 13 reconcile discrepancies: <b>6 min</b>','Step 15 staging: <b>9 min</b>'])+'<p style="color:var(--muted);font-size:13px">VA = locate item and pack (11 min, 14.9%). Value-enabling 18 min (24.3%). NVA 45 min (60.8%).</p>')}
+ </div>`+src('Analyze (1) (steps and minutes). VA / VE / NVA classification is the analyst’s judgement.'),
+ init(){
+  const draw=f=>{$('#steps').innerHTML=FLOW.map((s,i)=>{const dim=f==='all'?false:f==='hot'?!HOT.includes(i):s[2]!==f;return `<div class="step ${s[2]}${dim?' dim':''}${HOT.includes(i)?' hot':''}"><span>${i+1}  ${s[0]}</span><b>${s[1]} min</b></div>`}).join('')};
+  draw('all');bindSeg('flowF',draw);
+  const c=col();mk('cFlow',{type:'doughnut',data:{labels:['Value-adding 11 min','Value-enabling 18 min','Non-value-adding 45 min'],datasets:[{data:[11,18,45],backgroundColor:[c.g,c.gr,c.p],borderWidth:0}]},options:{cutout:'62%',plugins:{legend:{position:'bottom'}}}})}},
+{id:'swim',label:'Order-flow swimlane',html:()=>head('Order-flow swimlane: seven steps across four lanes, and the biggest delay is not on the diagram','Click a step, or press play to walk an order through the warehouse. Switch overlays to see where defects arise and where the 74 minutes go.')+`
+ <div class="row" style="margin-bottom:12px">${seg('swM',[['flow','Flow'],['def','Defect exposure'],['time','Time (min)']],'flow')}
+  <button class="btn" id="swPrev">◀ Prev</button><button class="btn pri" id="swPlay">▶ Play</button><button class="btn" id="swNext">Next ▶</button></div>
+ <div class="split" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)">
+  <div class="card" style="padding:12px"><div class="swwrap"><svg id="swsvg" viewBox="0 0 860 550" role="img" aria-label="Order fulfilment swimlane diagram"></svg></div><div class="legend" id="swLeg"></div></div>
+  <div id="swDet"></div></div>
+ <div class="callout warn"><b>What the diagram leaves out:</b> transport to the packing station and the packing-station wait (As-Is steps 8–9) take <b>21 of the 74 minutes</b> and sit between “verify items” and “quality check”, but have no box here. Adding them would put the largest non-value-adding delay on the map.</div>`+
+ src('Untitled_Diagram.drawio (lanes, steps and flow); minutes and defect counts from Analyze (1) and Analyze (2). Mapping of diagram steps to the 15 As-Is steps is the analyst’s judgement and should be validated with operations.'),
+ init(){
+  const L=[['Customer',20,140],['Order management',140,255],['Warehouse operation',255,400],['Dispatch',400,530]];
+  const N=[
+   {k:'order',t:['Place order'],lane:0,sh:'end',x:200,y:45,w:120,h:60,min:2,def:null,bx:260,by:121,
+    d:{who:'Customer',what:'The customer places an order with the client brand, which reaches Parahouse.',steps:'As-Is step 1: receive customer order (2 min)',ev:['Voice of customer starts here: the right item, undamaged, on time','No complaint log or on-time data in the workbook']}},
+   {k:'proc',t:['Process order','SKU, quantity, customer details'],lane:1,sh:'proc',x:180,y:165,w:200,h:60,min:14,def:null,bx:280,by:241,
+    d:{who:'Order management',what:'The order is validated, a pick list is generated and a picker and route are assigned manually.',steps:'As-Is steps 2–4: validate (3), pick list (2), manual assignment (9) = 14 min',ev:['Manual assignment is a 9-minute non-value-adding hotspot','Outdated or inaccurate pick lists: 17 of 243 picking errors (7.0%)']}},
+   {k:'pick',t:['Pick items'],lane:2,sh:'hex',x:180,y:275,w:120,h:80,min:6,def:'pick',bx:240,by:373,
+    d:{who:'Warehouse operation',what:'The picker locates and collects the ordered items.',steps:'As-Is step 5: picker locates item (6 min, value-adding)',ev:['Picking error rate 1.86% → 0.10%','Manual errors 102 and poor bin labels 85 = 187 of 243 errors (77.0%)']}},
+   {k:'verify',t:['Verify items'],lane:2,sh:'hex',x:340,y:275,w:120,h:80,min:3,def:'pick',bx:400,by:373,
+    d:{who:'Warehouse operation',what:'Items are scanned and cross-checked against the pick list.',steps:'As-Is steps 6–7: scan barcode (1), cross-check (2) = 3 min',ev:['Lack of scan verification: 9 of 243 picking errors (3.7%)','Scanning exists, but may not be enforced at confirmation; scan-to-confirm is proposed (intervention 2)']}},
+   {k:'qc',t:['Quality check'],lane:2,sh:'hex',x:490,y:275,w:120,h:80,min:3,def:'dmg',bx:550,by:373,
+    d:{who:'Warehouse operation',what:'Items are inspected for damage before packing.',steps:'As-Is step 10: inspect item for damage (3 min)',ev:['Damage rate 2.29% → 0.04%','Handling training 119 and stacking 74 of 299 damage cases; skipped quality checks only 2 (0.7%)']}},
+   {k:'inv',nm:'Inventory management',t:['Inventory','management'],lane:2,sh:'hex',x:640,y:275,w:120,h:80,min:9,def:'inv',bx:708,by:373,anc:'start',
+    d:{who:'Warehouse operation',what:'The stock record is updated and discrepancies between physical and system counts are reconciled.',steps:'As-Is steps 12–13: update inventory (3), reconcile discrepancies (6) = 9 min',ev:['Mismatch on 57 of 61 days → 5 of 61; variance units 315 → 21','Receiving errors 98, duplicate SKUs 76, cycle counts 64 = 238 of 315 (75.6%)']}},
+   {k:'pack',nm:'Pack & dispatch',t:['Pack &','dispatch'],lane:3,sh:'para',x:610,y:420,w:150,h:90,min:16,def:'dmg',bx:598,by:468,anc:'end',
+    d:{who:'Dispatch',what:'The item is packed, labelled and staged for dispatch.',steps:'As-Is steps 11, 14, 15: pack (5), label (2), stage (9) = 16 min',ev:['Staging is a 9-minute non-value-adding hotspot','Stacking / poor palletization: 74 of 299 damage cases (24.7%); inadequate packaging 9']}},
+   {k:'deliver',t:['Order delivery'],lane:0,sh:'end',x:640,y:45,w:120,h:60,min:0,def:null,bx:700,by:121,
+    d:{who:'Customer',what:'The customer receives the shipment. The outcome the whole process is judged on.',steps:'Outside the project scope: transport beyond the warehouse is excluded in the charter',ev:['Target: correct, undamaged shipment','No delivery or on-time data in the workbook']}}];
+  const DEF={pick:['Picking errors 1.86%','--c2'],dmg:['Damage 2.29%','--c6'],inv:['Count mismatch','--pink']};
+  const E=['M260 105 L260 163','M240 225 L240 273','M300 315 L338 315','M460 315 L488 315','M610 315 L638 315','M700 355 L700 418','M760 465 L830 465 L830 75 L762 75'];
+  let mode='flow',cur=0,timer=null;
+  const shape=(n,st)=>{const{x,y,w,h}=n;
+   if(n.sh==='end')return `<rect class="sh" style="${st}" x="${x}" y="${y}" width="${w}" height="${h}" rx="30"/>`;
+   if(n.sh==='proc')return `<rect class="sh" style="${st}" x="${x}" y="${y}" width="${w}" height="${h}" rx="4"/><path class="in" d="M${x+12} ${y}V${y+h}M${x+w-12} ${y}V${y+h}"/>`;
+   if(n.sh==='hex')return `<polygon class="sh" style="${st}" points="${x+20},${y} ${x+w-20},${y} ${x+w},${y+h/2} ${x+w-20},${y+h} ${x+20},${y+h} ${x},${y+h/2}"/>`;
+   return `<polygon class="sh" style="${st}" points="${x+28},${y} ${x+w},${y} ${x+w-28},${y+h} ${x},${y+h}"/>`};
+  const label=n=>{const cx=n.x+n.w/2,cy=n.y+n.h/2,ls=n.t;
+   return ls.map((s,i)=>`<text x="${cx}" y="${cy+(i-(ls.length-1)/2)*15+4}" text-anchor="middle" class="${i?'sub':'ttl'}">${s}</text>`).join('')};
+  const draw=()=>{
+   const css2=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+   let s=`<defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="arh"/></marker><marker id="arA" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="arA"/></marker></defs>`;
+   s+=`<rect x="50" y="20" width="750" height="510" rx="6" class="frame"/>`;
+   L.forEach((l,i)=>{s+=`<rect x="50" y="${l[1]}" width="750" height="${l[2]-l[1]}" class="lane l${i%2}"/><rect x="50" y="${l[1]}" width="120" height="${l[2]-l[1]}" class="lanehd"/><text x="110" y="${(l[1]+l[2])/2+4}" text-anchor="middle" class="lt">${l[0].split(' ').map((w,j,a)=>`<tspan x="110" dy="${j?15:-(a.length-1)*7}">${w}</tspan>`).join('')}</text>`});
+   s+=`<rect x="50" y="20" width="750" height="510" rx="6" class="frame2"/>`;
+   if(mode==='time')s+=`<g class="ghost"><rect x="318" y="379" width="300" height="19" rx="9.5"/><text x="468" y="392" text-anchor="middle">Not on diagram: steps 8–9 · 21 min</text></g>`;
+   E.forEach((p,i)=>{const act=i===cur-1||i===cur;s+=`<path d="${p}" class="edge${i===cur?' act':''}" marker-end="url(#${i===cur?'arA':'ar'})"/>`});
+   N.forEach((n,i)=>{let st='';const mx=Math.max(...N.map(q=>q.min));
+    if(mode==='def'&&n.def)st=`fill:${css2(DEF[n.def][1])};fill-opacity:.28;stroke:${css2(DEF[n.def][1])}`;
+    if(mode==='time'&&n.min)st=`fill:${css2('--c1')};fill-opacity:${(.1+.55*n.min/mx).toFixed(2)};stroke:${css2('--c1')}`;
+    const bt=mode==='def'&&n.def?DEF[n.def][0]:mode==='time'&&n.min?n.min+' min':'';
+    s+=`<g class="nd ${n.sh}${i===cur?' sel':''}" data-i="${i}" tabindex="0" role="button" aria-label="${n.t.join(' ')}">${shape(n,st)}${label(n)}${bt?`<text x="${n.bx}" y="${n.by}" text-anchor="${n.anc||'middle'}" class="bd">${bt}</text>`:''}</g>`});
+   const n=N[cur];s+=`<g class="tok" style="transform:translate(${n.x+n.w-6}px,${n.y+6}px)"><circle r="9"/><text y="4" text-anchor="middle">${cur+1}</text></g>`;
+   $('#swsvg').innerHTML=s;
+   $('#swLeg').innerHTML=mode==='def'?Object.values(DEF).map(d=>`<span><i style="background:var(${d[1]})"></i>${d[0]}</span>`).join('')+'<span>Uncoloured = no defect type mapped</span>':mode==='time'?'<span>Shading = minutes in the step (As-Is steps mapped by analyst)</span><span>Mapped total: 53 min + 21 min not shown = 74 min</span>':'<span>Rounded = start / end</span><span>Double-bar box = process</span><span>Hexagon = warehouse operation</span><span>Parallelogram = output</span>';
+   const d=n.d,pct=n.min?Math.round(n.min/74*100):0;
+   $('#swDet').innerHTML=`<div class="card"><h4>Step ${cur+1} of ${N.length} · ${d.who}</h4><h3 style="font-size:20px">${n.nm||n.t[0]}</h3><p>${d.what}</p><div class="mrow"><span>Maps to</span><b style="text-align:right">${d.steps}</b></div>${n.min?`<div class="mrow"><span>Share of 74-minute cycle</span><span style="display:flex;gap:8px;align-items:center;min-width:140px"><div class="bar"><i style="width:${pct/ .3>100?100:pct/.3}%"></i></div><b>${n.min} min · ${pct}%</b></span></div>`:''}<h4 style="margin-top:12px">Evidence from the DMAIC data</h4>${ul(d.ev)}${n.def?`<p>${pill(DEF[n.def][0],'p')}</p>`:''}</div>`};
+  const go=i=>{cur=(i+N.length)%N.length;draw()};
+  const stop=()=>{if(timer){clearInterval(timer);timer=null;$('#swPlay').textContent='▶ Play'}};
+  $('#swsvg').addEventListener('click',e=>{const g=e.target.closest('.nd');if(g){stop();go(+g.dataset.i)}});
+  $('#swsvg').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const g=e.target.closest('.nd');if(g){e.preventDefault();stop();go(+g.dataset.i)}}});
+  $('#swNext').onclick=()=>{stop();go(cur+1)};$('#swPrev').onclick=()=>{stop();go(cur-1)};
+  $('#swPlay').onclick=()=>{if(timer){stop();return}$('#swPlay').textContent='❚❚ Pause';timer=setInterval(()=>go(cur+1),1500)};
+  bindSeg('swM',k=>{mode=k;draw()});
+  window.addEventListener('hashchange',stop,{once:true});
+  new MutationObserver((m,o)=>{if(!document.getElementById('swsvg')){stop();o.disconnect()}}).observe($('#panel'),{childList:true});
+  draw()}},
+{id:'cost',label:'Cost scenario',html:()=>head('At the case’s unit losses, the baseline period carried an illustrative $0.38–0.67M of defect cost','Edit the loss per incident to test the scenario. Defaults are the case’s own assumptions.')+`
+ <div class="card"><div class="row" style="margin-bottom:12px">
+  <label class="field">Picking error ($)<input id="lp" type="number" value="330" min="0"></label>
+  <label class="field">Damaged item ($)<input id="ld" type="number" value="800" min="0"></label>
+  <label class="field">Count error ($)<input id="lm" type="number" value="1100" min="0"></label>
+  ${seg('basis',[['d','Mismatch = days'],['u','Mismatch = units']],'d')}</div>
+  <div class="split"><div class="cv"><canvas id="cCost"></canvas></div><div id="costOut"></div></div></div>
+ <div class="callout warn"><b>Scenario, not audited loss.</b> To firm this up we need cost actuals per incident, and whether one variance unit equals one loss event. Excludes implementation cost; the cause of the fall is unproven.</div>
+ ${src('Define sheet (loss per incident: $330 / $800 / $1,100) × Measure and Improve counts; 61-day window each.')}`,
+ init(){
+  let basis='d';
+  const calc=()=>{const lp=+$('#lp').value||0,ld=+$('#ld').value||0,lm=+$('#lm').value||0;
+   const base=[243*lp,299*ld,(basis==='d'?57:315)*lm],imp=[16*lp,6*ld,(basis==='d'?5:21)*lm];
+   const tb=base.reduce((a,b)=>a+b,0),ti=imp.reduce((a,b)=>a+b,0);
+   $('#costOut').innerHTML=tbl(['Cost line','Baseline','Improve','Difference'],[['Picking',fmt(base[0]),fmt(imp[0]),fmt(base[0]-imp[0])],['Damage',fmt(base[1]),fmt(imp[1]),fmt(base[1]-imp[1])],['Mismatch ('+(basis==='d'?'days':'units')+')',fmt(base[2]),fmt(imp[2]),fmt(base[2]-imp[2])],['<b>Total</b>','<b>'+fmt(tb)+'</b>','<b>'+fmt(ti)+'</b>','<b>'+fmt(tb-ti)+'</b>']],{num:[1,2,3]})+
+    `<p style="font-size:13px;color:var(--muted)">Largest baseline line: <b>${['picking','damage','mismatch'][base.indexOf(Math.max(...base))]}</b> (${Math.round(Math.max(...base)/tb*100)}% of total).</p>`;
+   if(ch){ch.data.datasets[0].data=base;ch.data.datasets[1].data=imp;ch.update()}return[base,imp]};
+  let ch=null;const c=col();const [b0,i0]=[[243*330,299*800,57*1100],[16*330,6*800,5*1100]];
+  ch=mk('cCost',{type:'bar',data:{labels:['Picking errors','Damaged goods','Inventory mismatch'],datasets:[{label:'Baseline (Apr–May 2021)',data:b0,backgroundColor:c.p},{label:'Improve (Oct–Nov 2025)',data:i0,backgroundColor:c.g}]},options:{plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:x=>x.dataset.label+': '+fmt(x.parsed.y)}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v/1000+'k'}}}}});
+  calc();['lp','ld','lm'].forEach(i=>$('#'+i).addEventListener('input',calc));bindSeg('basis',k=>{basis=k;calc()})}},
+{id:'signoff',label:'Sponsor sign-off',html:()=>head('Sponsor sign-off request (draft) closes the Define gate')+`
+ <div class="split"><div class="mail"><div class="hd"><b>To:</b> Project Sponsor, Parahouse Warehousing<br><b>Subject:</b> Approval to proceed: reduce picking, damage and count defects (300 SKUs)</div>
+ <p>Dear Sponsor,</p><p>Following the Define phase, we request approval of the charter: scope limited to the picking process, damaged goods and inventory counts across 300 SKUs, as you specified.</p><p>Baseline (Apr–May 2021, 61 days): picking error rate 1.86%, damage rate 2.29%, inventory mismatch on 57 of 61 days.</p><p>We will proceed to Measure and Analyze on approval, and will return with root causes, a prioritised action list and a control plan. Please reply to confirm scope, goal metrics and the numeric targets you wish to set.</p><p>Regards,<br>Project team</p></div>
+ ${card('Status',`<p><span class="stamp">DRAFT</span></p>`+ul(['Draft only: no approval is recorded in the workbook','Needs: sponsor name, numeric targets, budget limit','Replace baseline figures if scope or period changes']),'tint-b')}</div>`+src('Drafted by the analyst from the charter. Not sent; approval not on file.')}
+]);
+
+P('measure','Measure',[
+{id:'plan',label:'Data plan & audit',html:()=>head('Data collection plan: what was measured, how, and what had to be reconstructed')+
+ tbl(['Measure','Operational definition','Source','Frequency / size','Status'],[
+ ['Picking error rate','Incorrectly picked ÷ sampled items','Measure C ÷ B','Daily, 61 days, 13,039 items',pill('Recomputed','g')],
+ ['Damage rate','Damaged items ÷ sampled items','Measure D ÷ B','Daily, 61 days, 13,039 items',pill('Recomputed','g')],
+ ['Inventory variance','|Actual − SAP| in units; flag if Actual ≠ SAP','Measure F, G','Daily, 61 days, 29,740 units',pill('Recomputed','g')],
+ ['Cause of each defect','Reason code per defect, 3 categories, 29 reasons','Analyze (2)','857 occurrences',pill('Totals tie out','g')],
+ ['Order cycle time','Minutes per process step (15 steps)','Analyze (1)','One observation per step',pill('Single value','b')],
+ ['Order volume','700 orders a month; 6 days a week, 8 hours a day','Analyze (1) notes','Stated, not measured',pill('Assumption','p')]])+
+ `<div class="callout warn"><b>Not documented:</b> who recorded defects, how items were sampled, and whether the 2021 and 2025 periods used the same method.</div>
+ <h3 class="headline" style="margin-top:26px;font-size:20px">The audit confirms the arithmetic; measurement-system validity is the open gap</h3>
+ <div class="grid g2">
+ ${card('Audit results',tbl(['Check','Result'],[['Baseline totals: 13,039 items; 243 / 299 errors; 315 variance units; 57 mismatch days',pill('Match','g')],['Pareto totals vs Measure totals (243 / 299 / 315)',pill('Match','g')],['Improve sheet totals (no formulas): 15,365 items; 16 / 6; 21 units; 5 days',pill('Computed here','b')],['Blanks, negatives, duplicate dates (both periods)',pill('None found','g')],['Actual vs SAP direction','Actual ≥ SAP on all 62 mismatch days (57 baseline + 5 improve)']]))}
+ <div class="grid">${card('Measurement-system study (GRR / AAA)',ul(['Cannot be run: one record per day, no repeat judgements','Proposed: attribute agreement study, about 30 items, 2–3 appraisers, 2 trials, covering pick-correct, damaged and count','Common acceptance rule of thumb: kappa ≥ 0.8']),'tint-p')}
+ ${card('Data-quality flags',ul(['Picking errors move almost in step with sample size (r = 0.96): confirm how they were recorded','Rates are per item; the case’s costs are per order (700 orders a month vs about 6,400 sampled items)']),'tint-b')}</div></div>
+ <p class="lede" style="margin-top:12px"><i>Reading: totals are reliable; whether each count is a valid, repeatable observation is untested.</i></p>`+src('Measure, Improve and Analyze (1–2) sheet structure; Pearson correlation of daily sampled items vs picking errors (n = 61).')},
+{id:'base',label:'Baseline',html:()=>head('Baseline: 1.86% picking errors, 2.29% damage, and a count mismatch on 57 of 61 days')+`
+ <div class="grid g3" style="margin-bottom:16px">
+  ${card('','<div class="kpi"><div class="lbl">Picking errors</div><div class="big p">3.98 / day</div><div class="sub">Max 6 on one day; errors on all 61 days</div></div>','hover')}
+  ${card('','<div class="kpi"><div class="lbl">Damaged items</div><div class="big p">4.90 / day</div><div class="sub">Max 10 on one day; damage on 60 of 61 days</div></div>','hover')}
+  ${card('','<div class="kpi"><div class="lbl">Inventory variance units</div><div class="big p">5.16 / day</div><div class="sub">Max 16 on one day; every difference is Actual > SAP</div></div>','hover')}</div>`+
+ tbl(['Metric','Numerator','Denominator','Rate','Better','Reading'],[
+ ['Picking error rate','243 errors','13,039 sampled items',pill('1.86%','p'),'Lower','4.0 a day; range 1.6–2.7% daily'],
+ ['Damage rate','299 damaged','13,039 sampled items',pill('2.29%','p'),'Lower','Highest item-level rate; 0–9% daily'],
+ ['Inventory variance rate','315 units','29,740 actual units',pill('1.06%','p'),'Lower','Accuracy 98.94%'],
+ ['Days with mismatch','57 days','61 days',pill('93.4%','p'),'Lower','4 clean days; SAP under-counts']])+
+ src('Measure sheet columns B–K. Inventory accuracy = 1 − Σ|Actual − SAP| ÷ ΣActual.')},
+{id:'daily',label:'Daily trend',html:()=>head('Damage worsened from April to May while picking stayed flat; no daily series is normal','Click a legend item to show or hide a series. Hover for daily values.')+`
+ <div class="split">${card('Daily rates, Apr–May 2021 (% of sampled items)','<div class="cv tall"><canvas id="cDaily"></canvas></div>')}
+ <div class="grid">${card('Apr → May 2021',ul(['Damage: 1.80% → 2.92% (p < 0.001)','Picking: 1.83% → 1.91% (p = 0.74, no change)','Use attribute methods: p-charts and proportion tests']),'tint-b')}
+ ${card('Normality (Shapiro-Wilk)',tbl(['Series (daily)','p','Normal?'],[['Picking rate','0.0004',pill('No','p')],['Damage rate','0.001',pill('No','p')],['Variance units','0.015',pill('No','p')]],{num:[1]}))}</div></div>`+
+ src('Measure sheet daily rates (n = 61). Shapiro-Wilk on daily rates; chi-square test for April vs May.'),
+ init(){const c=col();mk('cDaily',{type:'line',data:{labels:DATES.slice(0,61),datasets:[{label:'Picking error rate %',data:DAILY.pick.slice(0,61),borderColor:c.b,backgroundColor:c.b,pointRadius:0,borderWidth:2,tension:.2},{label:'Damage rate %',data:DAILY.dmg.slice(0,61),borderColor:c.p,backgroundColor:c.p,pointRadius:0,borderWidth:2,tension:.2}]},options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,title:{display:true,text:'% of sampled items'}},x:{ticks:{maxTicksLimit:10}}}}})}},
+{id:'sigma',label:'Sigma level',html:()=>head('Baseline sigma sits at 3.5–3.8σ per item, but the daily count process is effectively at 0σ')+`
+ <div class="split">${card('Baseline sigma level (short-term, with 1.5σ shift)','<div class="cv"><canvas id="cSig"></canvas></div>')}
+ <div class="grid">${tbl(['KPI','Defect rate','DPMO','Sigma'],[['Picking','1.86%','18,636','3.58'],['Damage','2.29%','22,931','3.50'],['Inventory units','1.06%','10,592','3.80'],['Mismatch days','93.4%','934,426','≈ 0.0']],{num:[1,2,3]})}
+ ${card('',ul(['Six Sigma benchmark: 3.4 DPMO; baseline is about 3,000–7,000× higher','Damage is the weakest item-level KPI (3.50σ)','Day-level view shows the count process rarely runs clean']))}</div></div>`+
+ src('Computed from Measure sheet totals. Sigma = NORMSINV(1 − p) + 1.5. One opportunity per item or unit assumed.'),
+ init(){const c=col();mk('cSig',{type:'bar',data:{labels:['Picking','Damage','Inventory units','Mismatch days'],datasets:[{label:'Baseline sigma level',data:[3.58,3.5,3.8,0],backgroundColor:[c.b,c.b,c.b,c.p]}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:6,title:{display:true,text:'σ'}}}}})}}
+]);
+
+P('analyze','Analyze',[
+{id:'pareto',label:'Pareto',html:()=>`<h3 class="headline" id="parHead"></h3>`+seg('parSel',[['pick','Picking errors'],['dmg','Damaged goods'],['mis','Inventory mismatch']],'pick')+`
+ <div class="split">${card('<span id="parTitle"></span>','<div class="cv tall"><canvas id="cPar"></canvas></div><div class="row" style="margin-top:10px"><label class="field" style="flex:1">Top <b id="nLab" style="color:var(--text)">2</b> causes<input type="range" id="nSl" min="1" max="9" value="2" style="width:100%;padding:0;border:0"></label><div><span style="color:var(--muted);font-size:12px">cumulative share</span><div class="big" id="nCum">77.0%</div></div></div>')}
+ <div class="grid"><div id="parTbl"></div><div id="parNotes"></div></div></div>`+src('Analyze (2); counts and shares recomputed. Total = recorded causes (243 / 299 / 315).'),
+ init(){
+  let key='pick',N=2;const c=col();let ch=null;
+  const draw=()=>{const d=PARETO[key],tot=d.n;let cum=0;const cp=d.rows.map(r=>{cum+=r[1];return +(cum/tot*100).toFixed(1)});
+   $('#parHead').textContent=d.head;$('#parTitle').textContent=d.title+' (n = '+tot+')';
+   const sl=$('#nSl');sl.max=d.rows.length;N=Math.min(N,d.rows.length);sl.value=N;
+   const upd=()=>{N=+sl.value;$('#nLab').textContent=N;$('#nCum').textContent=cp[N-1].toFixed(1)+'%';ch.data.datasets[0].backgroundColor=d.rows.map((_,i)=>i<N?col().b:col().gr);ch.update()};
+   killCharts();
+   ch=mk('cPar',{data:{labels:d.rows.map(r=>r[0].length>26?r[0].slice(0,24)+'…':r[0]),datasets:[{type:'bar',label:'Occurrences',data:d.rows.map(r=>r[1]),backgroundColor:d.rows.map((_,i)=>i<N?c.b:c.gr),yAxisID:'y'},{type:'line',label:'Cumulative %',data:cp,borderColor:c.p,backgroundColor:c.p,pointRadius:4,yAxisID:'y1',tension:.15}]},options:{plugins:{legend:{position:'bottom'},tooltip:{callbacks:{title:i=>d.rows[i[0].dataIndex][0]}}},scales:{y:{beginAtZero:true,title:{display:true,text:'Occurrences'}},y1:{position:'right',min:0,max:100,grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}},x:{ticks:{maxRotation:55,minRotation:35,font:{size:11}}}}}});
+   sl.oninput=upd;upd();
+   cum=0;$('#parTbl').innerHTML=tbl(['#','Cause','n','Share','Cum.'],d.rows.map((r,i)=>{cum+=r[1];return [i+1,r[0],r[1],(r[1]/tot*100).toFixed(1)+'%',(cum/tot*100).toFixed(1)+'%']}),{num:[0,2,3,4],hl:r=>r[0]<=N});
+   $('#parNotes').innerHTML=card('',ul(d.notes),'tint-b')};
+  draw();bindSeg('parSel',k=>{key=k;draw()})}},
+{id:'fish',label:'Fishbone',html:()=>head('Fishbone: People, Method and Information account for 76% of the 857 recorded cause occurrences','All 29 documented reasons were grouped into six families. Open a family to see its causes. The grouping is the analyst’s judgement.')+`
+ <div class="card" style="margin-bottom:14px"><div class="cv sm"><canvas id="cFish"></canvas></div></div><div id="fam"></div>`+
+ src('Analyze (2) counts grouped by the analyst into six families; counts are occurrences (all three defect types combined, total 857: picking 243, damage 299, mismatch 315).'),
+ init(){
+  const F=[['People',260,[['Handling training gap',119],['Manual picking errors',102],['Improper handling',21],['Other: drops, language, fatigue',9],['Staff training (picking)',9]]],
+   ['Information',199,[['Poor bin labels',85],['Duplicate SKUs',76],['Outdated pick lists',17],['Look-alike items',12],['Packaging materials',9]]],
+   ['Method',194,[['Stacking / palletization',74],['Inconsistent cycle counts',64],['No fragile-item SOP',42],['No reconciliation',14]]],
+   ['Measurement',147,[['Receiving errors',98],['Slow-moving stock blind spot',33],['Untracked movements',14],['Skipped quality checks',2]]],
+   ['Environment',29,[['Overloaded shelving',11],['Climate, rushed ops',10],['Layout changes',5],['Theft',3]]],
+   ['Machine / system',28,[['No scan verification',9],['No system integration',8],['Equipment',6],['SAP sync issues',5]]]];
+  const c=col();
+  mk('cFish',{type:'bar',data:{labels:F.map(f=>f[0]),datasets:[{data:F.map(f=>f[1]),backgroundColor:F.map((_,i)=>i<3?c.b:c.gr)}]},options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>x.parsed.x+' occurrences ('+(x.parsed.x/857*100).toFixed(1)+'%)'}}}}});
+  $('#fam').innerHTML=F.map((f,i)=>`<details class="acc"${i===0?' open':''}><summary>${f[0]} <div class="bar"><i style="width:${f[1]/260*100}%"></i></div><b>${f[1]}</b> ${pill((f[1]/857*100).toFixed(1)+'%','b')}</summary><div class="in">${f[2].map(x=>`<div class="mrow"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div></details>`).join('')}},
+{id:'cycle',label:'Cycle time',html:()=>head('Waiting, manual assignment and staging absorb 35 of the 74 minutes in the order cycle')+`
+ <div class="split">${card('Cycle time by step (minutes)','<div class="cv tall"><canvas id="cCyc"></canvas></div><div class="legend"><span><i style="background:var(--c3)"></i>Value-adding</span><span><i style="background:var(--c5)"></i>Value-enabling</span><span><i style="background:var(--c2)"></i>Non-value-adding</span></div>')}
+ <div class="grid">${card('<span class="big p">17 min</span><br>Packing-station wait','<p>23% of the cycle; takt about 17.8 min per order.</p>','tint-p')}${card('',ul(['Non-value-adding steps: <b>45 of 74 min (60.8%)</b>','Rework step “reconcile discrepancies” (6 min) exists because of count errors','Packing queue near takt: likely constraint, to be confirmed by time study']))}</div></div>`+
+ src('Analyze (1). Takt = (26 days × 480 min) ÷ 700 orders = 17.8 min; 26 days = 6 days a week × 52 ÷ 12. Step classification is analyst judgement.'),
+ init(){const c=col(),m={va:c.g,ve:c.gr,nva:c.p};mk('cCyc',{type:'bar',data:{labels:FLOW.map(f=>f[0]),datasets:[{data:FLOW.map(f=>f[1]),backgroundColor:FLOW.map(f=>m[f[2]])}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{y:{ticks:{font:{size:11}}},x:{title:{display:true,text:'minutes'}}}}})}},
+{id:'tracker',label:'Data tracker',html:()=>head('Data tracker: causes and daily volumes are available; operator, SKU, shift and cost data are missing')+
+ tbl(['Potential X or Y','Status','Where','Needed to close the gap'],[
+ ['Defect counts and cause codes (Y, X)',pill('Available','g'),'Analyze (2)','Sub-codes for “manual errors”'],
+ ['Daily volume (sampled items)',pill('Available','g'),'Measure, Improve','Throughput per order, not only items'],
+ ['Date / weekday / month',pill('Available','g'),'Measure, Improve','—'],
+ ['Cycle time per step',pill('Partial','b'),'Analyze (1)','Repeated time study, per shift'],
+ ['Operator, shift, experience',pill('Missing','p'),'—','Operator ID and shift on each defect record'],
+ ['SKU, zone, bin location',pill('Missing','p'),'—','SKU and location on each error'],
+ ['Packaging and fragility class',pill('Missing','p'),'—','Product fragility and packaging type'],
+ ['Training records',pill('Missing','p'),'—','Training date and certification per picker'],
+ ['Cost per incident (actual)',pill('Partial','b'),'Define (case assumption)','Finance data for write-offs and re-shipments']],{sort:true})+
+ src('Review of all sheet columns in the workbook. Click a column header to sort.')},
+{id:'matrix',label:'Control–impact',html:()=>head('Control–impact view: five high-impact causes sit fully within the warehouse’s own control','Hover a cause to enlarge. Counts are recorded occurrences from the Pareto charts.')+`
+ <div class="mx"><div></div><div class="axh">Partial control</div><div class="axh">High control</div>
+  <div class="ax">High impact</div>
+  <div class="cell tint-b"><b>Diagnose, then act</b><em>High impact · partial control</em>${['Manual picking errors (102)','Receiving errors (98)','Duplicate SKUs (76)'].map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+  <div class="cell tint-g"><b>Start now</b><em>High impact · high control</em>${['Handling training (119)','Poor bin labels (85)','Stacking standards (74)','Cycle-count discipline (64)','No fragile-item SOP (42)'].map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+  <div class="ax">Lower impact</div>
+  <div class="cell tint-n"><b>Monitor</b><em>Lower impact · partial control</em>${['Slow-stock visibility (33)','Untracked movements (14)','System integration (8)'].map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+  <div class="cell tint-n"><b>Quick, cheap fixes when convenient</b><em>Lower impact · high control</em>${['Pick lists (17)','Handling (21)','Look-alikes (12)','Packaging (9)','Reconciliation (14)'].map(t=>`<span class="tag">${t}</span>`).join('')}</div></div>`+
+ src('Pareto counts from Analyze (2); control judgement is the analyst’s and should be validated with operations.')},
+{id:'tests',label:'Hypothesis tests',html:()=>head('Tests: damage varies by month and weekday; picking does not, and busy days are not riskier')+
+ tbl(['#','Question','Test','Result','p-value','Decision'],[
+ ['H1','Picking rate: April vs May?','Chi-square','1.83% vs 1.91%','0.74',pill('No change','n')],
+ ['H2','Damage rate: April vs May?','Chi-square','1.80% vs 2.92%','0.00002',pill('Rose','p')],
+ ['H3','Damage rate differs by weekday?','Chi-square','Mon 3.3% … Fri 1.7%','0.013',pill('Borderline','b')],
+ ['H4','Picking rate differs by weekday?','Chi-square','Flat','≈ 1.0',pill('No pattern','n')],
+ ['H5','Damage rate rises with volume?','Spearman','ρ = −0.40','0.001',pill('No: opposite sign','g')],
+ ['H6','Picking errors scale with volume?','Pearson','r = 0.96','< 0.001',pill('Check recording','p')]],{sort:true})+
+ `<div class="callout"><ul style="margin:0;padding-left:18px"><li>Significance threshold 0.05; with six tests, a stricter 0.0083 makes only H2, H5 and H6 clear</li><li>Days treated as independent; results show association, not cause</li></ul></div>`+
+ src('Measure sheet (n = 61 days). Chi-square tests of proportions, Spearman / Pearson correlation. Multiple-test threshold: 0.05 ÷ 6 = 0.0083.')},
+{id:'weekday',label:'Impacted X’s',html:()=>head('Impacted X’s: time and weekday matter for damage; order volume and recording method need checking')+`
+ <div class="split">${card('Damage rate by weekday, Apr–May 2021 (%)','<div class="cv"><canvas id="cWk"></canvas></div>')}
+ <div class="grid">${card('Supported by data '+pill('●','g'),ul(['Period: damage 1.80% → 2.92%','Cause categories (Pareto)']),'tint-g')}${card('Borderline '+pill('◐','b'),ul(['Weekday: Monday peak 3.3% (p = 0.013)']),'tint-b')}${card('Not supported '+pill('○','p'),ul(['High volume / rushed operations (4 cases; ρ = −0.40)']),'tint-p')}${card('Cannot test: data missing',ul(['Operator, shift, SKU, training date, packaging type']))}</div></div>`+
+ src('Measure sheet, damaged items ÷ sampled items grouped by weekday (n = 61 days); classification by analyst.'),
+ init(){const c=col(),v=[3.31,2.32,2.59,1.68,1.66,2.57,2.24];mk('cWk',{type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{data:v,backgroundColor:v.map(x=>x===3.31?c.p:c.b)}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'damage rate %'}}}}})}},
+{id:'priority',label:'Priority call',html:()=>head('Priority call: damage and inventory accuracy first; picking is the quick win and the largest residual')+
+ tbl(['Criterion','Damaged goods','Inventory mismatch','Picking errors'],[
+ ['Baseline occurrences','299','315 units; 57 days','243'],['Case loss per incident','$800','$1,100','$330'],['Illustrative baseline cost','$239,200','$62,700–$346,500','$80,190'],
+ ['Baseline trend','Worsening (1.80% → 2.92%)','Mismatch on 93% of days','Flat (1.83% → 1.91%)'],['Residual in Improve period','6','5 days; 21 units','16 (largest)'],
+ ['<b>Priority</b>',pill('1: address first','p'),pill('2: address first','p'),pill('3: quick win, then residual focus','b')]])+
+ `<div class="callout"><b>Answer:</b> address damage (training, stacking, fragile SOP) and inventory accuracy (receiving, duplicate SKUs, cycle counts) first; start bin relabelling at once because it is cheap and attacks 35% of picking errors.</div>`+
+ src('Measure, Improve, Analyze (2), Define (unit losses). Qualitative ranking; no weighted scoring. Residual share = 16 ÷ (16 + 6 + 21).')}
+]);
+
+P('improve','Improve',[
+{id:'solutions',label:'Interventions',html:()=>head('Six interventions target the causes behind 76–79% of each problem')+
+ tbl(['#','Problem','Cause targeted (share)','Proposed change','KPI to monitor','Dependency'],[
+ [1,'Picking','Poor bin/shelf labels (35%)','Standard location labels, relabel all 300 SKUs, 5S audit','Picking error rate','Labels, downtime window'],
+ [2,'Picking','Manual errors (42%)','Scan-to-confirm item and bin; split “manual error” into sub-codes','Scan compliance; picking error rate','Scanners, SAP setup'],
+ [3,'Damage','Handling training gap (40%)','Handling training and sign-off for sensitive goods','Damage rate','Trainer time'],
+ [4,'Damage','Stacking (25%), no fragile SOP (14%)','Stacking standard and fragile-item SOP with checklist','Damage rate; SOP audit score','SOP owner'],
+ [5,'Mismatch','Receiving errors (31%)','Blind receiving with scan check at dock','Receiving accuracy; variance units','Dock scanners'],
+ [6,'Mismatch','Duplicate SKUs (24%), cycle counts (20%)','SKU master clean-up; scheduled cycle counts with reconciliation','Inventory accuracy; mismatch days','Master-data owner']],{sort:true})+
+ src('Analyze (2) causes; interventions proposed by analyst. Benefit not quantified; no effort or cost data in workbook.')},
+{id:'fmea',label:'FMEA',html:()=>{const r=t=>pill(t,{High:'p',Highest:'p',Medium:'b',Moderate:'b',Weak:'p'}[t]||'n');
+ return head('FMEA (qualitative): receiving, SKU-master and handling failures rank highest; detection is the weak control')+
+ tbl(['Failure mode','Effect','Occurrence (n)','Severity','Detection*','Priority'],[
+ ['Wrong item picked (labels, manual)','Wrong shipment, re-ship ($330)','High (187 of 243)','Medium','Weak','High'],
+ ['Damage in handling (training, SOP)','Replacement ($800)','High (161 of 299)','High','Weak','High'],
+ ['Damage in stacking / shelving','Replacement ($800)','Medium (85 of 299)','High','Moderate','Medium'],
+ ['Receiving quantity wrong','SAP under-counts ($1,100)','High (98 of 315)','Highest','Weak','High'],
+ ['Duplicate / misclassified SKU','Count mismatch ($1,100)','High (76 of 315)','Highest','Weak','High'],
+ ['Inconsistent cycle counting','Errors persist ($1,100)','Medium (64 of 315)','Highest','Moderate','Medium']].map(x=>[x[0],x[1],x[2],r(x[3]),r(x[4]),r(x[5])]),{sort:true})+
+ `<p class="lede" style="margin-top:10px">* Detection is the analyst’s judgement and has no data behind it; the team should score it. Numeric RPN is not computed.</p>`+src('Analyze (2) frequencies; Define (case loss per incident). Detection and priority are qualitative judgement to be validated by the team.')}},
+{id:'tobe',label:'To-Be map',html:()=>head('To-Be map (proposed): automate assignment, verify at the pick, reconcile in-line')+`
+ <div class="split"><div class="card"><div class="stepper">${[['Receive and validate order','As-Is 1–3'],['Auto pick list and picker assignment','Replaces step 4 (9 min)'],['Pick with scan-to-confirm','Steps 5–7; targets labels, manual errors'],['Transport to packing with queue buffer','Steps 8–9; 17-min wait'],['Inspect and pack to standard','Steps 10–11; fragile SOP, stacking'],['Update stock in real time; exception alert','Replaces steps 12–13'],['Label and stage','Steps 14–15']].map((s,i)=>`<div class="st"><div class="dot">${i+1}</div><div><b>${s[0]}</b><small>${s[1]}</small></div></div>`).join('')}</div></div>
+ <div>${tbl(['Change','Cause targeted','Evidence','KPI'],[['Auto-assign picker and route','Manual step in the cycle (9 min)','Analyze (1) step 4','Cycle time; order lead time'],['Scan-to-confirm at the bin','Manual errors; poor labels','102 + 85 of 243 picking errors','Scan compliance; picking error rate'],['Packing-station buffer and slotting','Wait for station (17 min)','Analyze (1) step 9','Queue time'],['Fragile-item SOP and stacking standard','No SOP; stacking','42 + 74 of 299 damage cases','Damage rate'],['Real-time update, exception alerts','Receiving errors; no reconciliation','98 + 14 of 315 variance units','Inventory accuracy; mismatch days']])}</div></div>`+
+ src('Analyze (1) As-Is steps; changes proposed by analyst. No To-Be times estimated.')},
+{id:'roadmap',label:'Roadmap',html:()=>head('Roadmap: quick wins first; what was actually implemented still has to be confirmed')+`
+ <div class="callout warn" style="margin-top:0;margin-bottom:14px"><b>Implemented solutions: not documented.</b> Confirm what was done between the two periods before claiming any result as an effect of these actions.</div>
+ ${seg('rm',[['s','Short term (0–4 weeks)'],['m','Medium term (1–3 months)'],['l','Longer term (3–6 months)']],'s')}<div id="rmOut"></div>`+src('Proposed by analyst. Workbook documents no implemented solutions; Improve sheet holds daily results only.'),
+ init(){const R={s:['Relabel bins and shelves (solution 1)','Interim fragile-item SOP and stacking limits (4)','Sub-code “manual errors” in the defect log (2)','Daily KPI capture starts (all)'],m:['Scan-to-confirm at pick (2)','Handling training and sign-off (3)','Blind receiving at the dock (5)','Scheduled cycle counts (6)'],l:['SKU master clean-up (6)','SAP exception alerts for variance','Review packing-station queue (17 min wait)','Standardise audits; refresh limits on control charts']};
+  const d=k=>{$('#rmOut').innerHTML=`<div class="grid g2">${R[k].map((t,i)=>card('',`<div class="row"><span class="dot" style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-weight:700;font-size:13px">${i+1}</span><span>${t}</span></div>`,'hover')).join('')}</div>`};d('s');bindSeg('rm',d)}},
+{id:'prepost',label:'Pre & post',html:()=>head('Observed change: picking errors −94%, damage −98%, mismatch days −91%')+seg('ppM',[['r','Defect rate (%)'],['c','Counts']],'r')+`
+ <div class="split">${card('<span id="ppT"></span>','<div class="cv"><canvas id="cPP"></canvas></div>')}<div>${tbl(['Metric','Baseline','Improve','Change','Relative'],[['Picking error rate','1.86%','0.10%','−1.76 pp','−94.4%'],['Picking errors (count)','243','16','−227','−93.4%'],['Damage rate','2.29%','0.04%','−2.25 pp','−98.3%'],['Damaged items (count)','299','6','−293','−98.0%'],['Inventory variance rate','1.06%','0.06%','−1.00 pp','−94.7%'],['Variance units','315','21','−294','−93.3%'],['Days with mismatch (of 61)','57','5','−52 days','−91.2%']],{num:[1,2,3,4]})}<p class="lede" style="margin-top:8px;font-size:13px">pp = percentage points. Sampled items: 13,039 baseline, 15,365 improve.</p></div></div>`+
+ src('Measure (Apr 1–May 31, 2021) and Improve (Oct 1–Nov 30, 2025), recomputed. Periods not directly comparable; see next tab.'),
+ init(){const c=col();let ch;const D={r:{t:'Defect rates by period (%)',l:['Picking error rate','Damage rate','Inventory variance rate'],b:[1.86,2.29,1.06],i:[0.1,0.04,0.06]},c:{t:'Defect counts by period',l:['Picking errors','Damaged items','Variance units','Mismatch days'],b:[243,299,315,57],i:[16,6,21,5]}};
+  const draw=k=>{killCharts();const d=D[k];$('#ppT').textContent=d.t;ch=mk('cPP',{type:'bar',data:{labels:d.l,datasets:[{label:'Baseline (Apr–May 2021)',data:d.b,backgroundColor:c.p},{label:'Improve (Oct–Nov 2025)',data:d.i,backgroundColor:c.g}]},options:{plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true}}}})};draw('r');bindSeg('ppM',draw)}},
+{id:'stats',label:'Statistical test',html:()=>head('The difference is statistically decisive, but a four-year gap blocks any claim that our actions caused it')+`
+ <div class="grid g2"><div>${tbl(['KPI','Difference','95% CI','p-value'],[['Picking error rate','1.76 pp','1.52 – 2.00 pp','< 0.0001'],['Damage rate','2.25 pp','2.00 – 2.51 pp','< 0.0001'],['Inventory variance rate','1.00 pp','0.88 – 1.12 pp','< 0.0001'],['Mismatch days (57 vs 5 of 61)','52 days','—','< 0.0001 (Fisher)']],{num:[1,2,3]})}
+ <div class="card tint-g" style="margin-top:16px"><h3>What the test shows</h3><p>Chance alone does not plausibly explain the difference. The test does not say why the rates differ.</p></div></div>
+ ${card('Why causation is not established',ul(['Periods are Apr–May 2021 vs Oct–Nov 2025','Volume differs: avg 214 vs 252 sampled items a day','Different months; no seasonal control','Process, staff, system, recording method may differ','No log of implemented solutions','<b>Recommended:</b> pilot zone vs control zone, tracked on a p-chart over the same weeks']),'tint-p')}</div>`+
+ src('Measure and Improve, two-proportion z-test (pooled); 95% CI on the difference; Fisher exact test for mismatch days.')},
+{id:'sigma2',label:'Sigma: before & after',html:()=>head('Sigma rises by about one level to 4.6–4.9σ, but the process is not yet at Six Sigma')+`
+ <div class="split">${card('Sigma level: baseline vs improve period','<div class="cv"><canvas id="cS2"></canvas></div>')}<div class="grid">${tbl(['KPI','DPMO base','DPMO now','Sigma gain'],[['Picking','18,636','1,041','+1.00'],['Damage','22,931','390','+1.36'],['Inventory','10,592','563','+0.95'],['Mismatch days','934,426','81,967','+2.90']],{num:[1,2,3]})}${card('',ul(['Six Sigma = 3.4 DPMO; picking is still about 300× higher','Damage is closest to target (390 DPMO)','Only 6–21 events per KPI: estimates are imprecise']),'tint-b')}</div></div>`+
+ src('Improve sheet totals; Sigma = NORMSINV(1 − p) + 1.5.'),
+ init(){const c=col();mk('cS2',{type:'bar',data:{labels:['Picking','Damage','Inventory units','Mismatch days'],datasets:[{label:'Baseline',data:[3.58,3.5,3.8,0],backgroundColor:c.p},{label:'Improve period',data:[4.58,4.86,4.76,2.89],backgroundColor:c.g}]},options:{plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,max:6,title:{display:true,text:'σ'}}}}})}},
+{id:'ctrl',label:'Control charts',html:()=>head('Control charts: no improve-period day breaches a baseline limit, and all 61 days sit below the baseline centre line for picking, damage and inventory variance','p-charts for the two sampled defect rates and an individuals (I) chart for daily inventory variance, built from the attached workbook. The periods are four years apart; the break sits between day 61 and day 62.')+
+ `<div style="display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center">${seg('ccM',[['pk','Picking error rate'],['dm','Damage rate'],['iv','Inventory variance']],'pk')}${seg('ccL',[['b','Baseline limits'],['s','Two-stage limits']],'b')}<button class="btn" id="xlsDl" style="background:var(--accent);color:var(--on-accent);margin:0 0 12px">⬇ Attached workbook (.xlsx)</button></div>
+ <div class="card"><div class="cv tall"><canvas id="cCC"></canvas></div></div>
+ <div class="grid g3" id="ccCards" style="margin-top:16px"></div>
+ <div class="callout" id="ccNote" style="margin-top:16px"></div>
+ <details class="card" style="margin-top:16px"><summary style="cursor:pointer;font-weight:700">Daily data behind the charts (122 days, from the workbook)</summary><div id="ccTbl" style="margin-top:12px"></div></details>`+
+ src('Classroom_Project_3_-_Inventory_Management.xlsx, sheets Measure (1 Apr–31 May 2021) and Improve (1 Oct–30 Nov 2025), 61 days each, recomputed from the raw counts. p-chart limits: p̄ ± 3√(p̄(1−p̄)/nᵢ) with each day’s own sample size. I-chart limits: mean ± 2.66 × average moving range. Variance = |Actual − SAP|.'),
+ init(){
+  const c=col(),RED='#E5484D',AMB='#F5A623',NB=61,N=RAW.n.length;
+  let M='pk',LM='b';
+  const NAME={pk:'Picking error rate',dm:'Damage rate',iv:'Inventory variance'};
+  const fv=(m,v)=>m==='iv'?v.toFixed(2)+' units':v.toFixed(2)+'%';
+  const cnt=m=>m==='pk'?RAW.pk:RAW.dm;
+  function build(m,mode){
+   const y=m==='iv'?RAW.act.map((a,i)=>Math.abs(a-RAW.sap[i])):cnt(m).map((x,i)=>x/RAW.n[i]*100);
+   const stage=(a,b)=>{
+    if(m==='iv'){const v=y.slice(a,b),mean=v.reduce((s,x)=>s+x,0)/v.length;let mr=0;for(let i=1;i<v.length;i++)mr+=Math.abs(v[i]-v[i-1]);mr/=v.length-1;return ()=>[mean,mean+2.66*mr,Math.max(0,mean-2.66*mr)]}
+    let C=0,T=0;for(let i=a;i<b;i++){C+=cnt(m)[i];T+=RAW.n[i]}const p=C/T;
+    return i=>{const s=3*Math.sqrt(p*(1-p)/RAW.n[i]);return [p*100,(p+s)*100,Math.max(0,(p-s)*100)]}};
+   const f1=stage(0,NB),f2=mode==='s'?stage(NB,N):f1,cl=[],ucl=[],lcl=[];
+   for(let i=0;i<N;i++){const r=(i<NB?f1:f2)(i);cl.push(r[0]);ucl.push(r[1]);lcl.push(r[2])}
+   const r1=y.map((v,i)=>v>ucl[i]||(lcl[i]>0&&v<lcl[i])),r2=Array(N).fill(false);
+   if(mode==='b'){for(const [a,b] of [[0,NB],[NB,N]]){let i=a;while(i<b){const sg=Math.sign(y[i]-cl[i]);let j=i;while(sg!==0&&j+1<b&&Math.sign(y[j+1]-cl[j+1])===sg)j++;if(sg!==0&&j-i+1>=8)for(let k=i;k<=j;k++)r2[k]=true;i=j+1}}}
+   return {y,cl,ucl,lcl,r1,r2};
+  }
+  const brk={id:'brk',afterDatasetsDraw(ch){const {ctx,chartArea:a,scales:{x}}=ch;const xm=(x.getPixelForValue(NB-1)+x.getPixelForValue(NB))/2;
+   ctx.save();ctx.strokeStyle=css('--muted');ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(xm,a.top);ctx.lineTo(xm,a.bottom);ctx.stroke();ctx.setLineDash([]);
+   ctx.fillStyle=css('--muted');ctx.font='600 11px Roboto,Arial,sans-serif';ctx.textAlign='right';ctx.fillText('Baseline · Apr–May 2021',xm-8,a.top+13);ctx.textAlign='left';ctx.fillText('Improve · Oct–Nov 2025',xm+8,a.top+13);ctx.restore()}};
+  const gap=col0=>x=>x.p0DataIndex===NB-1?'transparent':col0;
+  function draw(){
+   killCharts();
+   const s=build(M,LM),hasL=s.lcl.some(v=>v>0),hasR2=s.r2.some(Boolean);
+   const pc=(f)=>s.y.map((_,i)=>f(i));
+   const ds=[
+    {label:NAME[M],data:s.y,borderColor:c.b,borderWidth:1.6,tension:0,segment:{borderColor:x=>x.p0DataIndex===NB-1?'transparent':(x.p0DataIndex>=NB?c.g:c.b)},
+     pointRadius:pc(i=>s.r1[i]?5:s.r2[i]?3.5:2),pointBackgroundColor:pc(i=>s.r1[i]?RED:s.r2[i]?AMB:(i>=NB?c.g:c.b)),pointBorderColor:pc(i=>s.r1[i]?RED:s.r2[i]?AMB:(i>=NB?c.g:c.b))},
+    {label:'Centre line',data:s.cl,borderColor:c.pa,borderDash:[6,4],pointRadius:0,borderWidth:2,segment:{borderColor:gap(c.pa)}},
+    {label:'UCL',data:s.ucl,borderColor:c.p,borderDash:[2,3],pointRadius:0,borderWidth:2,segment:{borderColor:gap(c.p)}}];
+   if(hasL)ds.push({label:'LCL',data:s.lcl,borderColor:c.gr,borderDash:[2,3],pointRadius:0,borderWidth:2,segment:{borderColor:gap(c.gr)}});
+   ds.push({label:'Beyond a limit',data:[],showLine:false,backgroundColor:RED,borderColor:RED,pointRadius:5});
+   if(hasR2)ds.push({label:'Run of 8+ on one side of centre line',data:[],showLine:false,backgroundColor:AMB,borderColor:AMB,pointRadius:4});
+   const unit=M==='iv'?'Units (|Actual − SAP|)':'% of sampled items';
+   mk('cCC',{type:'line',data:{labels:DATES,datasets:ds},plugins:[brk],options:{interaction:{mode:'index',intersect:false},
+    plugins:{title:{display:true,text:NAME[M]+' · '+(M==='iv'?'I-chart':'p-chart')+' · '+(LM==='b'?'baseline limits':'two-stage limits (each period its own)')},legend:{position:'bottom'},
+     tooltip:{callbacks:{title:it=>DATES[it[0].dataIndex]+(it[0].dataIndex<NB?' · baseline':' · improve'),
+      label:x=>x.dataset.data.length?x.dataset.label+': '+x.parsed.y.toFixed(M==='iv'&&x.datasetIndex===0?0:2)+(M==='iv'?'':'%'):null,
+      afterBody:it=>{const i=it[0].dataIndex;return M==='iv'?['Actual '+RAW.act[i]+' vs SAP '+RAW.sap[i]]:['Sampled '+RAW.n[i]+' · count '+cnt(M)[i]]}}}},
+    scales:{y:{beginAtZero:true,title:{display:true,text:unit}},x:{ticks:{maxTicksLimit:8}}}}});
+   cards(s);
+  }
+  function cards(){
+   const sb=build(M,'b'),ss=build(M,'s'),y=sb.y,dts=a=>a.map(i=>DATES[i]).join(', ')||'none';
+   const idx=(f,a,b)=>{const o=[];for(let i=a;i<b;i++)if(f(i))o.push(i);return o};
+   const bUcl=idx(i=>sb.r1[i],0,NB),bRun=idx(i=>sb.r2[i],0,NB).length;
+   const iAbove=idx(i=>y[i]>sb.cl[i],NB,N).length,iBeyond=idx(i=>sb.r1[i],NB,N).length,iOwn=idx(i=>ss.r1[i],NB,N);
+   const any=M==='iv'?idx(i=>y[i]>0,NB,N).length:idx(i=>cnt(M)[i]>0,NB,N).length;
+   let pk=NB;for(let i=NB;i<N;i++)if(y[i]>y[pk])pk=i;
+   let mean;if(M==='iv'){mean=y.slice(NB).reduce((a,b)=>a+b,0)/NB}else{mean=cnt(M).slice(NB).reduce((a,b)=>a+b,0)/RAW.n.slice(NB).reduce((a,b)=>a+b,0)*100}
+   const bm=sb.ucl.slice(0,NB).reduce((a,b)=>a+b,0)/NB;
+   $('#ccCards').innerHTML=
+    card('Baseline · Apr–May 2021',ul(['Centre line: <b>'+fv(M,sb.cl[0])+'</b>','UCL: <b>'+fv(M,bm)+'</b>'+(M==='iv'?'':' on average (varies with daily n)'),'Days beyond UCL: <b>'+bUcl.length+'</b> ('+dts(bUcl)+')','Points in runs of 8+ on one side of the centre line: <b>'+bRun+'</b>']),'hover')+
+    card('Improve · Oct–Nov 2025',ul(['Mean: <b>'+fv(M,mean)+'</b>','Days with any '+(M==='iv'?'variance':'defect')+': <b>'+any+' of 61</b>','Peak: <b>'+fv(M,y[pk])+'</b> on '+DATES[pk],'Above baseline centre line: <b>'+iAbove+'</b> days · beyond baseline UCL: <b>'+iBeyond+'</b>','Beyond own-period UCL (two-stage): <b>'+iOwn.length+'</b> ('+dts(iOwn)+')']),'hover tint-g')+
+    card('Reading',`<p>${iAbove===0&&iBeyond===0?'Every improve-period day is at or below the baseline centre line and inside the limits: a sustained downward shift, not a one-off dip.':'Some improve-period days reach the baseline centre line or limits; review them as special causes.'}</p><p>The chart shows <i>that</i> the process moved, not <i>why</i>: no log of implemented actions exists. Days beyond the improve-period UCL are the first ones to investigate.</p>`,'hover tint-p');
+   $('#ccNote').innerHTML='<b>How to read:</b> red points are beyond a control limit; amber points belong to a run of 8 or more days on one side of the baseline centre line (shown on baseline limits only). '+(M==='iv'?'I-chart limits use mean ± 2.66 × average moving range; the lower limit is 0.':'The lower control limit is 0 at these volumes, so it is not drawn. At an improve-period rate near 0.1% most days record zero events, so the two-stage limits are indicative only. Re-base after 20–25 stable points.');
+  }
+  /* data table */
+  const sP=build('pk','b'),sD=build('dm','b'),sV=build('iv','b'),pr=(k,i)=>(RAW[k][i]/RAW.n[i]*100).toFixed(2);
+  const rows=[];for(let i=0;i<N;i++){const f=[sP.r1[i]&&'Picking',sD.r1[i]&&'Damage',sV.r1[i]&&'Variance'].filter(Boolean);
+   rows.push([DATES[i],i<NB?'Baseline':'Improve',RAW.n[i],RAW.pk[i],pr('pk',i),RAW.dm[i],pr('dm',i),RAW.act[i],RAW.sap[i],Math.abs(RAW.act[i]-RAW.sap[i]),f.length?f.join(', '):'–'])}
+  $('#ccTbl').innerHTML='<div style="max-height:360px;overflow:auto">'+tbl(['Date','Period','Sampled','Picked wrong','Pick %','Damaged','Damage %','Actual','SAP','|Var|','Beyond baseline UCL'],rows,{num:[2,3,4,5,6,7,8,9],hl:r=>r[10]!=='–'})+'</div>';
+  /* download */
+  $('#xlsDl').onclick=()=>{try{const b=atob(XLSX_B64),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);
+   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([u],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download='Classroom_Project_3_-_Inventory_Management.xlsx';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000)}catch(e){}};
+  bindSeg('ccM',k=>{M=k;draw()});bindSeg('ccL',k=>{LM=k;draw()});draw();
+ }},
+{id:'benefit',label:'Benefits',html:()=>head('Illustrative benefit: $0.37–0.63M less defect cost per 61-day window at the case’s unit losses')+`
+ <div class="split">${card('Illustrative defect cost per 61 days','<div class="cv"><canvas id="cBen"></canvas></div>')}<div>${tbl(['Cost line','Baseline','Improve','Difference'],[['Picking ($330)','$80,190','$5,280','$74,910'],['Damage ($800)','$239,200','$4,800','$234,400'],['Mismatch, days basis ($1,100)','$62,700','$5,500','$57,200'],['Mismatch, units basis ($1,100)','$346,500','$23,100','$323,400'],['<b>Total, low case</b>','<b>$382,090</b>','<b>$15,580</b>','<b>$366,510</b>'],['<b>Total, high case</b>','<b>$665,890</b>','<b>$33,180</b>','<b>$632,710</b>']],{num:[1,2,3]})}<div class="callout warn"><b>Scenario:</b> assumed unit losses, no implementation cost. Cause of the fall is unproven; firm up with finance actuals.</div></div></div>`+
+ src('Define (loss per incident) × Measure and Improve counts. Not audited. Try the editable version on Define → Cost scenario.'),
+ init(){const c=col();mk('cBen',{type:'bar',data:{labels:['Low case','High case'],datasets:[{label:'Baseline (Apr–May 2021)',data:[382090,665890],backgroundColor:c.p},{label:'Improve period (Oct–Nov 2025)',data:[15580,33180],backgroundColor:c.g}]},options:{plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:x=>x.dataset.label+': '+fmt(x.parsed.y)}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v/1000+'k'}}}}})}}
+]);
+
+P('control','Control',[
+{id:'plan',label:'Sustainment plan',html:()=>head('Sustainment plan: six KPIs, daily to monthly cadence, with proposed triggers')+
+ tbl(['KPI','Definition','Baseline','Improve period','Trigger (proposed)','Cadence','Owner (generic)'],[
+ ['Picking error rate','Errors ÷ sampled items','1.86%','0.10%','Daily rate > 1.86% or ≥ 3 errors a day','Daily','Shift supervisor'],
+ ['Damage rate','Damaged ÷ sampled items','2.29%','0.04%','Daily rate > 2.29% or ≥ 2 damaged items','Daily','Shift supervisor'],
+ ['Inventory accuracy','1 − Σ|Actual − SAP| ÷ Σ actual','98.94%','99.94%','Variance > 5 units on any day','Daily','Inventory controller'],
+ ['Mismatch days','Days Actual ≠ SAP','57 of 61','5 of 61','≥ 4 mismatch days in a month','Monthly','Inventory controller'],
+ ['Scan-to-confirm compliance '+pill('new','b'),'Scanned picks ÷ picks','n/a','n/a','Set after 4 weeks of data','Weekly','Warehouse manager'],
+ ['Cycle-count completion '+pill('new','b'),'Counts done ÷ scheduled','n/a','n/a','Any scheduled count missed','Weekly','Inventory controller']],{sort:true})+
+ `<div class="callout"><b>Response:</b> trigger → root-cause review within one shift → corrective action logged → effect verified at the next weekly review.</div>`+src('Measure and Improve (values); triggers, cadence and owners proposed. “New” KPIs have no data in the workbook.')},
+{id:'dash',label:'Dashboard & roles',html:()=>head('A one-page dashboard and clear roles keep the gains from slipping back')+`
+ <div class="grid g2"><div><div class="grid g2">${[['Picking error rate','0.10%','Base 1.86%'],['Damage rate','0.04%','Base 2.29%'],['Inventory accuracy','99.94%','Base 98.94%'],['Mismatch days','5 / 61','Base 57 / 61']].map(k=>card('',`<div class="kpi"><div class="lbl">${k[0]}</div><div class="big g">${k[1]}</div><div class="sub">${k[2]}</div></div>`,'hover tint-g')).join('')}</div>
+ <p class="lede" style="margin-top:10px;font-size:13px">Wireframe, Improve-period values (Oct–Nov 2025). Add: 30-day trend, trigger status, open actions list.</p></div>
+ <div>${tbl(['Activity','Shift sup.','Inv. ctrl.','Whse mgr','CI lead','Sponsor'],[['Daily KPI capture','R','R','A','I','–'],['Root cause on trigger','R','C','A','R','I'],['Cycle counting','C','R','A','C','–'],['SOP and training updates','R','C','A','R','I'],['Monthly steering review','I','I','R','C','A']].map(r=>r.map((x,i)=>i&&x!=='–'?pill(x,{R:'b',A:'p',C:'n',I:'n'}[x]):x)))}
+ ${card('Review cadence',ul(['<b>Daily:</b> huddle on yesterday’s KPIs','<b>Weekly:</b> manager reviews trends and open actions','<b>Monthly:</b> steering review; re-base limits after 20–25 stable points','R responsible, A accountable, C consulted, I informed']),'')}</div></div>`+
+ src('Dashboard values from Improve sheet; roles and cadence proposed by analyst (not in workbook).')},
+{id:'close',label:'Closure request',html:()=>head('Closure approval request (draft): an approved email is not on file')+`
+ <div class="split"><div class="mail"><div class="hd"><b>To:</b> Project Sponsor, Parahouse Warehousing<br><b>Subject:</b> Project closure and control plan for approval</div>
+ <p>Dear Sponsor,</p><p>Between Apr–May 2021 and Oct–Nov 2025, picking errors fell from 1.86% to 0.10%, damage from 2.29% to 0.04%, and mismatch days from 57 to 5 of 61. These are observed differences; the periods are four years apart and the actions implemented are not documented, so we do not attribute the change to specific measures.</p><p>We ask you to approve: (1) the control plan and KPI triggers, (2) numeric targets, (3) a pilot-versus-control validation of the proposed interventions, and (4) the finance data needed to quantify benefits.</p><p>Regards,<br>Project team</p></div>
+ ${card('Open items before closure',`<p><span class="stamp">DRAFT</span></p>`+ul(['Log of implemented solutions','Numeric targets from the sponsor','Cost actuals from finance','Measurement-system study']),'tint-b')}</div>`+src('Drafted from the analysis. Not sent; no approval recorded.')}
+]);
+
+P('conclusion','Conclusion',[
+{id:'end',label:'Takeaways',html:()=>`<div class="hero"><small>Conclusion</small><h1>Defects fell sharply; proving why, and making it last, is the next job</h1></div>
+ <div class="grid g3">
+  ${card('What the data shows','<p>Picking 1.86% → 0.10%, damage 2.29% → 0.04%, mismatch days 57 → 5 of 61. Two or three causes per problem explain 76–79% of errors.</p>','hover tint-g')}
+  ${card('What it does not show','<p>That our actions caused the fall: periods are four years apart and no implementation log exists. Savings figures are scenarios.</p>','hover tint-p')}
+  ${card('What to decide next','<p>Confirm implemented actions; set numeric targets; approve the control plan; fund the data that closes the gaps.</p>','hover tint-b')}</div>
+ <div class="callout"><b>Management action plan:</b> damage and inventory accuracy first; relabel bins now; run a pilot against a control zone; track every KPI on the control charts.</div>`}
+]);
+
+P('appendix','Appendix',[
+{id:'verify',label:'A · Verification',html:()=>head('Appendix A: every provisional figure in the brief was recomputed and confirmed')+
+ tbl(['Provisional figure','Recomputed','Result'],[['Picking: manual 102 + labels 85 ≈ 77%','187 of 243 = 77.0%'],['Damage: leading causes ≈ 78.6%','Top three: 235 of 299 = 78.6%'],['Mismatch: leading causes ≈ 75.6%','Top three: 238 of 315 = 75.6%'],['Picking error rate 1.86%; count 243','243 ÷ 13,039 = 1.864%'],['Damage rate 2.29%; count 299','299 ÷ 13,039 = 2.293%'],['Improve picking 0.10%; count 16','16 ÷ 15,365 = 0.104%'],['Improve damage 0.04%; count 6','6 ÷ 15,365 = 0.039%'],['Mismatch days 57 → 5','57 and 5 of 61 days']].map(r=>[r[0],r[1],pill('Confirmed','g')]))+
+ `<div class="callout"><b>Clarification:</b> the mismatch Pareto counts variance units (315), not mismatch days (57). Book1.xlsx sheets Sheet1, Sheet2 and RACI (hospital and school examples) belong to other projects and were not used; Sheet4 supplied the toolkit grid.</div>`+src('Measure, Improve and Analyze (2), recomputed from raw cells.')},
+{id:'limits',label:'B · Limitations',html:()=>head('Appendix B: limitations and the data that would close them')+
+ tbl(['Limitation','Effect on conclusions','Data or action needed'],[['Periods four years apart (2021 vs 2025)','Observed change cannot be attributed to our actions','Pilot-versus-control run on contemporaneous data'],['No log of implemented solutions','Cannot link effect to action','Implementation record with dates and zones'],['Rates per sampled item; costs per order','Order-level defect rate unknown','Orders and lines per day; order IDs on defects'],['Picking errors track sample size (r = 0.96)','Recording method may be derived','Check recording procedure; independent audit'],['No measurement-system study','Repeatability of counts untested','Attribute agreement study'],['Unit losses are case assumptions','Costs are scenarios','Finance actuals per incident'],['Few events in Improve period (6–21)','Sigma estimates imprecise','Longer post-period; re-base control limits']])+src('Analyst review of all sheets.')}
+]);
+
+/* ---------- router ---------- */
+let pi=0,ti=0;
+const flat=[];PAGES.forEach((p,a)=>p.tabs.forEach((t,b)=>flat.push([a,b])));
+function renderNav(){
+  $('#phases').innerHTML=PAGES.map((p,i)=>`<button class="chip${i===pi?' on':''}" data-i="${i}">${p.label}</button>`).join('');
+  $('#tabs').innerHTML=PAGES[pi].tabs.map((t,i)=>`<button class="tab${i===ti?' on':''}" role="tab" data-i="${i}">${t.label}</button>`).join('');
+  $('#pageLabel').textContent=PAGES[pi].label;
+  const k=flat.findIndex(f=>f[0]===pi&&f[1]===ti);
+  $('#prog').style.width=((k+1)/flat.length*100)+'%';
+  $('#prevBtn').disabled=k===0;$('#nextBtn').disabled=k===flat.length-1;
+}
+function show(a,b,push=true){
+  pi=a;ti=b;killCharts();renderNav();
+  const t=PAGES[pi].tabs[ti],p=$('#panel');
+  p.style.animation='none';p.offsetHeight;p.style.animation='';
+  p.innerHTML=t.html();
+  if(t.init)t.init();
+  if(push)try{history.replaceState(null,'','#'+PAGES[pi].id+'/'+t.id)}catch(e){}
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function step(d){const k=flat.findIndex(f=>f[0]===pi&&f[1]===ti)+d;if(k>=0&&k<flat.length)show(...flat[k])}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button,.chip,.tab');
+  if(b&&(b.matches('.chip,.tab,.seg button,.fab button,.iconbtn'))){const r=b.getBoundingClientRect(),s=document.createElement('span'),d=Math.max(r.width,r.height);s.className='rip';s.style.cssText=`width:${d}px;height:${d}px;left:${e.clientX-r.left-d/2}px;top:${e.clientY-r.top-d/2}px`;b.appendChild(s);setTimeout(()=>s.remove(),600)}
+  const c=e.target.closest('.chip');if(c){show(+c.dataset.i,0);return}
+  const t=e.target.closest('.tab');if(t){show(pi,+t.dataset.i);return}
+  const th=e.target.closest('.sortable th');
+  if(th){const tb=th.closest('table'),i=[...th.parentNode.children].indexOf(th),asc=!th.classList.contains('asc');
+   tb.querySelectorAll('th').forEach(x=>x.classList.remove('asc','desc'));th.classList.add(asc?'asc':'desc');
+   const rows=[...tb.tBodies[0].rows],v=r=>r.cells[i].textContent.trim(),n=s=>parseFloat(s.replace(/[^0-9.\-]/g,''));
+   rows.sort((a,b)=>{const x=v(a),y=v(b),nx=n(x),ny=n(y);const r=(!isNaN(nx)&&!isNaN(ny))?nx-ny:x.localeCompare(y);return asc?r:-r});
+   rows.forEach(r=>tb.tBodies[0].appendChild(r))}
+});
+$('#prevBtn').onclick=()=>step(-1);$('#nextBtn').onclick=()=>step(1);
+document.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;if(e.key==='ArrowRight')step(1);if(e.key==='ArrowLeft')step(-1)});
+$('#themeBtn').onclick=()=>{const r=document.documentElement,dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;r.dataset.theme=dark?'light':'dark';try{localStorage.setItem('theme',r.dataset.theme)}catch(e){}show(pi,ti,false)};
+try{const s=localStorage.getItem('theme');if(s)document.documentElement.dataset.theme=s}catch(e){}
+(function(){let a=0,b=0;const h=(location.hash||'').slice(1).split('/');const x=PAGES.findIndex(p=>p.id===h[0]);if(x>=0){a=x;const y=PAGES[x].tabs.findIndex(t=>t.id===h[1]);if(y>=0)b=y}show(a,b,false)})();
+</script>
+</body>
+</html>
